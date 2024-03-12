@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel target="11">
+      <module name="Aptter.aptter-annotation" target="17" />
+      <module name="Aptter.aptter-annotation.main" target="17" />
+      <module name="Aptter.aptter-annotation.test" target="17" />
+      <module name="Aptter.aptter-compiler" target="17" />
+      <module name="Aptter.aptter-compiler.main" target="17" />
+      <module name="Aptter.aptter-compiler.test" target="17" />
+      <module name="DataDriven.aptter-annotation" target="17" />
+      <module name="DataDriven.aptter-annotation.main" target="17" />
+      <module name="DataDriven.aptter-annotation.test" target="17" />
+      <module name="DataDriven.aptter-compiler" target="17" />
+      <module name="DataDriven.aptter-compiler.main" target="17" />
+      <module name="DataDriven.aptter-compiler.test" target="17" />
+      <module name="DataSync.aptter-annotation.main" target="17" />
+      <module name="DataSync.aptter-annotation.test" target="17" />
+      <module name="DataSync.aptter-compiler.main" target="17" />
+      <module name="DataSync.aptter-compiler.test" target="17" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
