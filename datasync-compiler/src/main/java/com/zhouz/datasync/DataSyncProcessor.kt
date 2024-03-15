@@ -1,6 +1,7 @@
 package com.zhouz.datasync
 
 import com.google.auto.service.AutoService
+import com.sun.tools.javac.code.Symbol
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.Processor
@@ -52,6 +53,7 @@ class DataSyncProcessor : AbstractProcessor() {
             if (it.kind != ElementKind.METHOD) {
                 return@forEach
             }
+            (it as Symbol.MethodSymbol).params
         }
         return false
     }
