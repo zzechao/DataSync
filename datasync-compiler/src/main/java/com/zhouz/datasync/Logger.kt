@@ -3,30 +3,28 @@ package com.zhouz.datasync
 import javax.annotation.processing.Messager
 import javax.tools.Diagnostic
 
-class Logger(private val msg: Messager) {
+class Logger(private val msg: Messager?) {
     private val Logger = "Logger:"
 
     /**
      * Print info log.
      */
-    fun info(info: CharSequence) {
-        msg.printMessage(Diagnostic.Kind.NOTE, Logger + info)
-
+    fun info(info: String) {
+        msg?.printMessage(Diagnostic.Kind.NOTE, Logger + info)
     }
 
-    fun error(error: CharSequence) {
-        msg.printMessage(Diagnostic.Kind.ERROR, Logger + "An exception is encountered, [" + error + "]")
-
+    fun error(error: String) {
+        msg?.printMessage(Diagnostic.Kind.ERROR, Logger + "An exception is encountered, [" + error + "]")
     }
 
     fun error(error: Throwable?) {
         if (null != error) {
-            msg.printMessage(Diagnostic.Kind.ERROR, Logger + "An exception is encountered, [" + error.message + "]" + "\n" + formatStackTrace(error.stackTrace))
+            msg?.printMessage(Diagnostic.Kind.ERROR, Logger + "An exception is encountered, [" + error.message + "]" + "\n" + formatStackTrace(error.stackTrace))
         }
     }
 
-    fun warning(warning: CharSequence) {
-        msg.printMessage(Diagnostic.Kind.WARNING, Logger + warning)
+    fun warning(warning: String) {
+        msg?.printMessage(Diagnostic.Kind.WARNING, Logger + warning)
     }
 
     private fun formatStackTrace(stackTrace: Array<StackTraceElement>): String {
@@ -37,5 +35,4 @@ class Logger(private val msg: Messager) {
         }
         return sb.toString()
     }
-
 }
