@@ -21,6 +21,14 @@ class TestZhouz {
 //        main("zhouz")
         DataSync_Index().getDataSyncSubscriberInfo(Any::class)
     }
+
+
+    @DataSyncBuild
+    fun onTestData(testData: TestData) {
+    }
 }
+
+
+data class TestData(var value: Int = 1)
 
 

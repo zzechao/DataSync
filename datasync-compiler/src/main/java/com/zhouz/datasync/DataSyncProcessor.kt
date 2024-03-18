@@ -143,6 +143,9 @@ class DataSyncProcessor : AbstractProcessor() {
         }
     }
 
+    /**
+     * 检查注解类型
+     */
     private fun checkHasNoErrors(element: ExecutableElement): Boolean {
         if (element.kind != ElementKind.METHOD) {
             logger.error("@DataSyncBuild is only valid for methods")
