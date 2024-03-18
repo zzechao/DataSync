@@ -18,7 +18,7 @@ class TestZhouz {
 //        Mockito.`when`(applicationContext.packageName).thenReturn("myPackage")
 //        Mockito.`when`(context.applicationContext).thenReturn(applicationContext)
 //        CoreLog.init(context)
-        main("测试")
+        main("zhouz")
     }
 }
 
