@@ -114,7 +114,7 @@ class DataSyncProcessor : AbstractProcessor() {
         val func_getDataSyncSubscriberInfo = FunSpec.builder("getDataSyncSubscriberInfo")
             .addModifiers(KModifier.OVERRIDE)
             .addParameter(func_parameterspec_getdatasyncsubscriberinfo)
-            .returns(returns_func_getdatasyncsubscriberinfo)
+            .returns(returns_func_getdatasyncsubscriberinfo.copy(true))
             .addStatement("return %T()", returns_func_getdatasyncsubscriberinfo)
             .build()
 
