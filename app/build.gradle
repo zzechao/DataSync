@@ -38,4 +38,10 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation project(':datasync-api')
     kapt project(':datasync-compiler')
+
+    testImplementation "junit:junit:4.13.2"
+    testImplementation "androidx.test:core:1.5.0"
+    testImplementation 'org.mockito:mockito-core:3.6.28'
+// 如果需要 mock final 类或方法的话，还要引入 mockito-inline 依赖
+    testImplementation 'org.mockito:mockito-inline:3.6.28'
 }

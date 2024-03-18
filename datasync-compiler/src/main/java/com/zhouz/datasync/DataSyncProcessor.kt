@@ -1,8 +1,14 @@
 package com.zhouz.datasync
 
 import com.google.auto.service.AutoService
-import com.sun.tools.javac.code.Symbol
+import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.PropertySpec
+import com.squareup.kotlinpoet.TypeSpec
 import javax.annotation.processing.AbstractProcessor
+import javax.annotation.processing.Filer
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.Processor
 import javax.annotation.processing.RoundEnvironment
@@ -19,17 +25,20 @@ import javax.lang.model.element.TypeElement
 @AutoService(Processor::class)
 class DataSyncProcessor : AbstractProcessor() {
 
+    private val packageName = "com.zhouz.datasync"
 
     @Volatile
     private var isInit = false
     private lateinit var logger: Logger
+    private lateinit var mFiler: Filer
 
     @Synchronized
     override fun init(processingEnv: ProcessingEnvironment?) {
         super.init(processingEnv)
-        if (!isInit) {
+        if (!isInit && processingEnv != null) {
             isInit = true
-            logger = Logger(processingEnv?.messager)
+            mFiler = processingEnv.filer
+            logger = Logger(processingEnv.messager)
             logger.info("init end")
         }
     }
@@ -53,8 +62,42 @@ class DataSyncProcessor : AbstractProcessor() {
             if (it.kind != ElementKind.METHOD) {
                 return@forEach
             }
-            (it as Symbol.MethodSymbol).params
+            testMain()
         }
-        return false
+        return true
+    }
+
+    private fun testMain() {
+        val greeterClass = ClassName(packageName, "Greeter")
+        val file = FileSpec.builder(packageName, "HelloWorld")
+            .addType(
+                TypeSpec.classBuilder("Greeter")
+                    .primaryConstructor(
+                        FunSpec.constructorBuilder()
+                            .addParameter("name", String::class)
+                            .build()
+                    )
+                    .addProperty(
+                        PropertySpec.builder("name", String::class)
+                            .initializer("name")
+                            .build()
+                    )
+                    .addFunction(
+                        FunSpec.builder("greet")
+                            .addStatement("println(%P)", "\"Hello, \$name\"")
+                            .build()
+                    )
+                    .build()
+            )
+            .addFunction(
+                FunSpec.builder("main")
+                    .addParameter("args", String::class, KModifier.VARARG)
+                    .addStatement("%T(args[0]).greet()", greeterClass)
+                    .build()
+            )
+            .build()
+
+
+        file.writeTo(mFiler)
     }
 }

@@ -9,11 +9,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        repeat(10) {
-            Thread {
-
-            }.start()
-        }
+        main("测试")
     }
 
 
