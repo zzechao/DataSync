@@ -96,6 +96,16 @@ class DataSyncProcessor : AbstractProcessor() {
 
         val interface_clazz = ClassName("com.zhouz.datasync", "IDataSyncSubscriber")
 
+        // property mapSubscriber
+        val field_value_clazz = ClassName("com.zhouz.datasync", "DataSyncSubscriberInfo")
+        val field_key_clazz = KClass::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class))
+        val field_map_clazz = MutableMap::class.asClassName().parameterizedBy(field_key_clazz, field_value_clazz)
+        val property_field_map = PropertySpec.builder("mapSubscriber", field_map_clazz)
+            .addModifiers(KModifier.PRIVATE)
+            .addKdoc("数据同步订阅Map")
+            .initializer("mutableMapOf()")
+            .build()
+
         // func getdatasyncsubscriberinfo
         val returns_func_getdatasyncsubscriberinfo = ClassName("com.zhouz.datasync", "DataSyncSubscriberInfo")
         val clazz_parameterspec_getdatasyncsubscriberinfo = KClass::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class))
@@ -112,6 +122,7 @@ class DataSyncProcessor : AbstractProcessor() {
         val clazz = TypeSpec.classBuilder("DataSync_Index")
             .addKdoc("数据同步的订阅处理类")
             .addSuperinterface(interface_clazz)
+            .addProperty(property_field_map)
             .addFunction(func_getDataSyncSubscriberInfo)
             .build()
 
