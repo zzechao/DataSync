@@ -9,5 +9,5 @@ import kotlin.reflect.KClass
  * description: 数据同步处理定义接口
  */
 interface IDataSyncSubscriber {
-    fun getDataSyncSubscriberInfo(clazz: KClass<*>): DataSyncSubscriberInfo?
+    fun getDataSyncSubscriberInfo(clazz: KClass<*>): MutableList<DataSyncSubscriberInfo>?
 }

@@ -6,15 +6,14 @@ import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.MUTABLE_LIST
 import com.squareup.kotlinpoet.MUTABLE_MAP
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
-import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.asClassName
-import com.squareup.kotlinpoet.asTypeName
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Filer
 import javax.annotation.processing.ProcessingEnvironment
@@ -45,7 +44,7 @@ class DataSyncProcessor : AbstractProcessor() {
     private lateinit var logger: Logger
     private lateinit var mFiler: Filer
 
-    private val methodsByClass: MutableMap<TypeElement, ExecutableElement> = mutableMapOf()
+    private val methodsByClass: MutableMap<KClass<out Any>, MutableList<ExecutableElement>> = mutableMapOf()
 
     private var writerRoundDone = false
 
@@ -101,7 +100,7 @@ class DataSyncProcessor : AbstractProcessor() {
         val interface_clazz = ClassName("com.zhouz.datasync", "IDataSyncSubscriber")
 
         // property mapSubscriber
-        val field_value_clazz = ClassName("com.zhouz.datasync", "DataSyncSubscriberInfo")
+        val field_value_clazz = MUTABLE_LIST.parameterizedBy(ClassName("com.zhouz.datasync", "DataSyncSubscriberInfo"))
         val field_key_clazz = KClass::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class))
         val field_map_clazz = MUTABLE_MAP.parameterizedBy(field_key_clazz, field_value_clazz)
         val property_field_map = PropertySpec.builder("mapSubscriber", field_map_clazz)
@@ -111,7 +110,7 @@ class DataSyncProcessor : AbstractProcessor() {
             .build()
 
         // func getdatasyncsubscriberinfo
-        val returns_func_getdatasyncsubscriberinfo = ClassName("com.zhouz.datasync", "DataSyncSubscriberInfo")
+        val returns_func_getdatasyncsubscriberinfo = MUTABLE_LIST.parameterizedBy(ClassName("com.zhouz.datasync", "DataSyncSubscriberInfo"))
         val clazz_parameterspec_getdatasyncsubscriberinfo = KClass::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class))
         val func_parameterspec_getdatasyncsubscriberinfo = ParameterSpec.builder("clazz", clazz_parameterspec_getdatasyncsubscriberinfo)
             .build()
@@ -122,12 +121,29 @@ class DataSyncProcessor : AbstractProcessor() {
             .addStatement("return mapSubscriber.get(clazz)")
             .build()
 
+        val codeBlock = CodeBlock.builder()
+//        val map = mutableMapOf<KClass<out Any>, MutableList<>>()
+
+
+//        methodsByClass.forEach { typeElement, executableElement ->
+//            val param = executableElement.parameters.firstOrNull() ?: return@forEach
+//            val type = param.asType()
+//            val funcName = executableElement.simpleName
+//            val annotation = executableElement.getAnnotation(DataSyncBuild::class.java)
+//            val threadName = annotation.threadName
+//            val fieldName = annotation.filedNames
+//
+//
+//            logger.info("$executableElement")
+//        }
+
+
         // class DataSync_Index
         val clazz = TypeSpec.classBuilder("DataSync_Index")
             .addKdoc("数据同步的订阅处理类")
             .addSuperinterface(interface_clazz)
             .addProperty(property_field_map)
-            .addInitializerBlock(CodeBlock.builder().build())
+            .addInitializerBlock(codeBlock.build())
             .addFunction(func_getDataSyncSubscriberInfo)
             .build()
 
@@ -150,7 +166,8 @@ class DataSyncProcessor : AbstractProcessor() {
                 if (element is ExecutableElement) {
                     if (checkHasNoErrors(element)) {
                         val classElement = element.enclosingElement as TypeElement
-                        methodsByClass[classElement] = element
+                        val type = element.parameters.firstOrNull()?.asType() ?: return
+                        //methodsByClass[type] = element
                     }
                 } else {
                     logger.error("@DataSyncBuild is only valid for methods")
