@@ -7,3 +7,6 @@ package com.zhouz.datasync
  * description：TODO
  */
 data class Data(val test: Int = 1)
+
+
+data class Data1(val test2: Int = 1)

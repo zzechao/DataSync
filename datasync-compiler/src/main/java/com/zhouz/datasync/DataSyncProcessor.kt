@@ -25,6 +25,7 @@ import javax.lang.model.element.ElementKind
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
+import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
 import kotlin.reflect.KClass
@@ -107,8 +108,10 @@ class DataSyncProcessor : AbstractProcessor() {
 
         // property mapSubscriber
 
-        val field_value_clazz = MUTABLE_LIST.parameterizedBy(DataSyncSubscriberInfo::class.asClassName())
-        val field_key_clazz = KClass::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class))
+        val field_value_clazz =
+            MUTABLE_LIST.parameterizedBy(DataSyncSubscriberInfo::class.asClassName())
+        val field_key_clazz =
+            KClass::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class))
         val field_map_clazz = MUTABLE_MAP.parameterizedBy(field_key_clazz, field_value_clazz)
         val property_field_map = PropertySpec.builder("mapSubscriber", field_map_clazz)
             .addModifiers(KModifier.PRIVATE)
@@ -117,10 +120,13 @@ class DataSyncProcessor : AbstractProcessor() {
             .build()
 
         // func getdatasyncsubscriberinfo
-        val returns_func_getdatasyncsubscriberinfo = MUTABLE_LIST.parameterizedBy(DataSyncSubscriberInfo::class.asClassName())
-        val clazz_parameterspec_getdatasyncsubscriberinfo = KClass::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class))
-        val func_parameterspec_getdatasyncsubscriberinfo = ParameterSpec.builder("clazz", clazz_parameterspec_getdatasyncsubscriberinfo)
-            .build()
+        val returns_func_getdatasyncsubscriberinfo =
+            MUTABLE_LIST.parameterizedBy(DataSyncSubscriberInfo::class.asClassName())
+        val clazz_parameterspec_getdatasyncsubscriberinfo =
+            KClass::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class))
+        val func_parameterspec_getdatasyncsubscriberinfo =
+            ParameterSpec.builder("clazz", clazz_parameterspec_getdatasyncsubscriberinfo)
+                .build()
         val func_getDataSyncSubscriberInfo = FunSpec.builder("getDataSyncSubscriberInfo")
             .addModifiers(KModifier.OVERRIDE)
             .addParameter(func_parameterspec_getdatasyncsubscriberinfo)
@@ -129,7 +135,7 @@ class DataSyncProcessor : AbstractProcessor() {
             .build()
 
         val codeBlock = CodeBlock.builder()
-        val map =
+        val map = mutableMapOf<TypeMirror, MutableList<SubscriberBean>>()
         methodsByClass.forEach { typeElement, executableElement ->
             val param = executableElement.parameters.firstOrNull() ?: return@forEach
             val type = param.asType()
@@ -137,8 +143,10 @@ class DataSyncProcessor : AbstractProcessor() {
             val annotation = executableElement.getAnnotation(DataSyncBuild::class.java)
             val threadName = annotation.threadName
             val fieldName = annotation.filedNames
-
-            logger.info("$executableElement")
+            val list = map[type] ?: mutableListOf()
+            list.add(SubscriberBean(executableElement))
+            map[type] = list
+            logger.info("${map.size}")
         }
 
 

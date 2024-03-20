@@ -10,4 +10,9 @@ class DataController {
     @DataSyncBuild
     fun onDataChange(data: Data) {
     }
+
+    @DataSyncBuild
+    fun onData2Change(data1: Data1) {
+
+    }
 }
