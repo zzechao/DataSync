@@ -1,6 +1,8 @@
 package com.zhouz.datasync
 
-import javax.lang.model.element.ExecutableElement
+import javax.lang.model.element.Name
+import javax.lang.model.element.TypeElement
+import javax.lang.model.type.TypeMirror
 
 
 /**
@@ -8,4 +10,10 @@ import javax.lang.model.element.ExecutableElement
  * @date: 2024/3/20 14:49
  * description：订阅组装类
  */
-class SubscriberBean(val executableElement: ExecutableElement)
+class SubscriberBean(
+    val type: TypeMirror,
+    val funcName: Name,
+    val threadName: ThreadMode,
+    val fieldName: Array<String>,
+    val clazzElement: TypeElement
+)

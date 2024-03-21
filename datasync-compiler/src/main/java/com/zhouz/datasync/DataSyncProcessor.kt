@@ -49,7 +49,7 @@ class DataSyncProcessor : AbstractProcessor() {
     private lateinit var elementUtils: Elements
     private lateinit var typeUtils: Types
 
-    private val methodsByClass: MutableMap<TypeElement, ExecutableElement> = mutableMapOf()
+    private val subscriberBeansByType = mutableMapOf<TypeMirror, MutableList<SubscriberBean>>()
 
     private var writerRoundDone = false
 
@@ -85,7 +85,7 @@ class DataSyncProcessor : AbstractProcessor() {
             if (annotations.isNullOrEmpty()) return false
             roundEnv ?: return false
             collectSubscribers(annotations, roundEnv)
-            if (methodsByClass.isNotEmpty()) {
+            if (subscriberBeansByType.isNotEmpty()) {
                 createInfoFile()
             } else {
                 logger.warning("No @DataSyncBuild annotations found")
@@ -134,28 +134,25 @@ class DataSyncProcessor : AbstractProcessor() {
             .addStatement("return mapSubscriber.get(clazz)")
             .build()
 
-        val codeBlock = CodeBlock.builder()
-        val map = mutableMapOf<TypeMirror, MutableList<SubscriberBean>>()
-        methodsByClass.forEach { typeElement, executableElement ->
-            val param = executableElement.parameters.firstOrNull() ?: return@forEach
-            val type = param.asType()
-            val funcName = executableElement.simpleName
-            val annotation = executableElement.getAnnotation(DataSyncBuild::class.java)
-            val threadName = annotation.threadName
-            val fieldName = annotation.filedNames
-            val list = map[type] ?: mutableListOf()
-            list.add(SubscriberBean(executableElement))
-            map[type] = list
-            logger.info("${map.size}")
+        val mapBlock = CodeBlock.builder()
+        subscriberBeansByType.forEach { (type, list) ->
+            val dataCode = CodeBlock.builder()
+            list.forEachIndexed { index, subscriberBean ->
+                if (index == 0) {
+                    dataCode.add("%T()", DataSyncSubscriberInfo::class.asClassName())
+                } else {
+                    dataCode.add(",%T()", DataSyncSubscriberInfo::class.asClassName())
+                }
+            }
+            mapBlock.addStatement("mapSubscriber[%T::class]=mutableListOf(%L)", type, dataCode.build())
         }
-
 
         // class DataSync_Index
         val clazz = TypeSpec.classBuilder("DataSync_Index")
             .addKdoc("数据同步的订阅处理类")
             .addSuperinterface(interface_clazz)
             .addProperty(property_field_map)
-            .addInitializerBlock(codeBlock.build())
+            .addInitializerBlock(mapBlock.build())
             .addFunction(func_getDataSyncSubscriberInfo)
             .build()
 
@@ -178,7 +175,15 @@ class DataSyncProcessor : AbstractProcessor() {
                 if (element is ExecutableElement) {
                     if (checkHasNoErrors(element)) {
                         val classElement = element.enclosingElement as TypeElement
-                        methodsByClass[classElement] = element
+                        val funcName = element.simpleName
+                        val annotationElement = element.getAnnotation(DataSyncBuild::class.java)
+                        val threadName = annotationElement.threadName
+                        val fieldName = annotationElement.filedNames
+                        val param = element.parameters.firstOrNull() ?: return
+                        val type = param.asType()
+                        val list = subscriberBeansByType[type] ?: mutableListOf()
+                        list.add(SubscriberBean(type, funcName, threadName, fieldName, classElement))
+                        subscriberBeansByType[type] = list
                     }
                 } else {
                     logger.error("@DataSyncBuild is only valid for methods")
