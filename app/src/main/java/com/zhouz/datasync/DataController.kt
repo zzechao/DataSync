@@ -17,4 +17,9 @@ class DataController {
     fun onData2Change(data1: Data1) {
 
     }
+
+    @DataSyncBuild
+    fun onDataSameChange(data: com.zhouz.datasync.data.Data) {
+
+    }
 }
