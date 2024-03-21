@@ -14,6 +14,7 @@ import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.asClassName
+import com.squareup.kotlinpoet.asTypeName
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Filer
 import javax.annotation.processing.ProcessingEnvironment
@@ -102,14 +103,17 @@ class DataSyncProcessor : AbstractProcessor() {
      * 创建订阅的file
      */
     private fun createInfoFile() {
-        val syncClass = ClassName(packageName, "DataSync_Index")
+        //val syncClass = ClassName(packageName, "DataSync_Index")
 
         val interface_clazz = ClassName("com.zhouz.datasync", "IDataSyncSubscriber")
 
         // property mapSubscriber
 
         val field_value_clazz =
-            MUTABLE_LIST.parameterizedBy(DataSyncSubscriberInfo::class.asClassName())
+            MUTABLE_LIST.parameterizedBy(
+                DataSyncSubscriberInfo::class.asClassName()
+                    .parameterizedBy(WildcardTypeName.producerOf(Any::class))
+            )
         val field_key_clazz =
             KClass::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class))
         val field_map_clazz = MUTABLE_MAP.parameterizedBy(field_key_clazz, field_value_clazz)
@@ -121,7 +125,10 @@ class DataSyncProcessor : AbstractProcessor() {
 
         // func getdatasyncsubscriberinfo
         val returns_func_getdatasyncsubscriberinfo =
-            MUTABLE_LIST.parameterizedBy(DataSyncSubscriberInfo::class.asClassName())
+            MUTABLE_LIST.parameterizedBy(
+                DataSyncSubscriberInfo::class.asClassName()
+                    .parameterizedBy(WildcardTypeName.producerOf(Any::class))
+            )
         val clazz_parameterspec_getdatasyncsubscriberinfo =
             KClass::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class))
         val func_parameterspec_getdatasyncsubscriberinfo =
@@ -138,11 +145,18 @@ class DataSyncProcessor : AbstractProcessor() {
         subscriberBeansByType.forEach { (type, list) ->
             val dataCode = CodeBlock.builder()
             list.forEachIndexed { index, subscriberBean ->
-                if (index == 0) {
-                    dataCode.add("%T()", DataSyncSubscriberInfo::class.asClassName())
-                } else {
-                    dataCode.add(",%T()", DataSyncSubscriberInfo::class.asClassName())
+                if (index != 0) {
+                    dataCode.add(",")
                 }
+                dataCode.add(
+                    "%T(funcName=%S,dataClazz=%T::class,objectClazz=%T::class,threadMode=ThreadMode.%L,filedNames=arrayOf(%L))",
+                    DataSyncSubscriberInfo::class.asClassName().parameterizedBy(subscriberBean.type.asTypeName()),
+                    subscriberBean.funcName,
+                    subscriberBean.type.asTypeName(),
+                    subscriberBean.clazzElement.asType(),
+                    subscriberBean.threadName,
+                    subscriberBean.filedNames.joinToString(separator = ",") { "\"$it\"" }
+                )
             }
             mapBlock.addStatement("mapSubscriber[%T::class]=mutableListOf(%L)", type, dataCode.build())
         }

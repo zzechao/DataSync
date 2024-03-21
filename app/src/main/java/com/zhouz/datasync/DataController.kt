@@ -7,7 +7,9 @@ package com.zhouz.datasync
  * description：TODO
  */
 class DataController {
-    @DataSyncBuild
+    @DataSyncBuild(
+        threadName = ThreadMode.AYSN, filedNames = ["test", "name"]
+    )
     fun onDataChange(data: Data) {
     }
 

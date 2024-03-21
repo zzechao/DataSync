@@ -7,7 +7,7 @@ package com.zhouz.datasync
  * description：TODO
  */
 class DataController1 {
-    @DataSyncBuild
+    @DataSyncBuild(filedNames = ["test"])
     fun onDataChange(data: Data) {
     }
 }
