@@ -173,7 +173,7 @@ class DataSyncProcessor : AbstractProcessor() {
                         dataCode.add(",")
                     }
                     dataCode.add(
-                        "%T(funcName=%S,dataClazz=%T::class,objectClazz=%T::class,threadMode=ThreadMode.%L,filedNames=arrayOf(%L))",
+                        "%T(methodName=%S,dataClazz=%T::class,subscriberClazz=%T::class,threadMode=ThreadMode.%L,filedNames=arrayOf(%L))",
                         DataSyncSubscriberInfo::class.asClassName()
                             .parameterizedBy(subscriberBean.type.asTypeName()),
                         subscriberBean.funcName,
@@ -204,7 +204,7 @@ class DataSyncProcessor : AbstractProcessor() {
                         dataCode.add(",")
                     }
                     dataCode.add(
-                        "%T(funcName=%S,dataClazz=%T::class,objectClazz=%T::class,threadMode=ThreadMode.%L,filedNames=arrayOf(%L))",
+                        "%T(methodName=%S,dataClazz=%T::class,subscriberClazz=%T::class,threadMode=ThreadMode.%L,filedNames=arrayOf(%L))",
                         DataSyncSubscriberInfo::class.asClassName()
                             .parameterizedBy(subscriberBean.type.asTypeName()),
                         subscriberBean.funcName,
