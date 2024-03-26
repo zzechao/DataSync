@@ -112,13 +112,13 @@ class DataSyncProcessor : AbstractProcessor() {
         val property_field_map = {
             val field_value_clazz =
                 MUTABLE_LIST.parameterizedBy(
-                    DataSyncSubscriberInfo::class.asClassName()
+                    KClass::class.asClassName()
                         .parameterizedBy(WildcardTypeName.producerOf(Any::class))
                 )
             val field_key_clazz =
                 KClass::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class))
             val field_map_clazz = MUTABLE_MAP.parameterizedBy(field_key_clazz, field_value_clazz)
-            PropertySpec.builder("mapSubscriber", field_map_clazz)
+            PropertySpec.builder("mapSubscriberByData", field_map_clazz)
                 .addModifiers(KModifier.PRIVATE)
                 .addKdoc("数据同步订阅Map")
                 .initializer("mutableMapOf()")
@@ -136,12 +136,33 @@ class DataSyncProcessor : AbstractProcessor() {
             val field_key_clazz =
                 KClass::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class))
             val field_map_clazz = MUTABLE_MAP.parameterizedBy(field_key_clazz, field_value_clazz)
-            PropertySpec.builder("mapSubscriberBySub", field_map_clazz)
+            PropertySpec.builder("mapSubInfoBySubscriberClazz", field_map_clazz)
                 .addModifiers(KModifier.PRIVATE)
                 .addKdoc("数据同步订阅Map")
                 .initializer("mutableMapOf()")
                 .build()
         }
+
+        // func getSubscriberClazzByDataClazz
+        val func_getSubscriberClazzByDataClazz = {
+            val returns_func_getdatasyncsubscriberinfo =
+                MUTABLE_LIST.parameterizedBy(
+                    KClass::class.asClassName()
+                        .parameterizedBy(WildcardTypeName.producerOf(Any::class))
+                )
+            val clazz_parameterspec_getdatasyncsubscriberinfo =
+                KClass::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class))
+            val func_parameterspec_getdatasyncsubscriberinfo =
+                ParameterSpec.builder("clazz", clazz_parameterspec_getdatasyncsubscriberinfo)
+                    .build()
+            FunSpec.builder("getSubscriberClazzByDataClazz")
+                .addModifiers(KModifier.OVERRIDE)
+                .addParameter(func_parameterspec_getdatasyncsubscriberinfo)
+                .returns(returns_func_getdatasyncsubscriberinfo.copy(true))
+                .addStatement("return mapSubscriberByData.get(clazz)")
+                .build()
+        }
+
 
         // func getDataSyncSubscriberInfo
         val func_getDataSyncSubscriberInfo = {
@@ -155,11 +176,11 @@ class DataSyncProcessor : AbstractProcessor() {
             val func_parameterspec_getdatasyncsubscriberinfo =
                 ParameterSpec.builder("clazz", clazz_parameterspec_getdatasyncsubscriberinfo)
                     .build()
-            FunSpec.builder("getDataSyncSubscriberInfo")
+            FunSpec.builder("getSubInfoBySubscriberClazz")
                 .addModifiers(KModifier.OVERRIDE)
                 .addParameter(func_parameterspec_getdatasyncsubscriberinfo)
                 .returns(returns_func_getdatasyncsubscriberinfo.copy(true))
-                .addStatement("return mapSubscriber.get(clazz)")
+                .addStatement("return mapSubInfoBySubscriberClazz.get(clazz)")
                 .build()
         }
 
@@ -173,18 +194,12 @@ class DataSyncProcessor : AbstractProcessor() {
                         dataCode.add(",")
                     }
                     dataCode.add(
-                        "%T(methodName=%S,dataClazz=%T::class,subscriberClazz=%T::class,threadMode=ThreadMode.%L,filedNames=arrayOf(%L))",
-                        DataSyncSubscriberInfo::class.asClassName()
-                            .parameterizedBy(subscriberBean.type.asTypeName()),
-                        subscriberBean.funcName,
-                        subscriberBean.type.asTypeName(),
-                        subscriberBean.clazzElement.asType(),
-                        subscriberBean.threadName,
-                        subscriberBean.filedNames.joinToString(separator = ",") { "\"$it\"" }
+                        "%T::class",
+                        subscriberBean.clazzElement.asType()
                     )
                 }
                 mapBlock.addStatement(
-                    "mapSubscriber[%T::class]=mutableListOf(%L)",
+                    "mapSubscriberByData[%T::class]=mutableListOf(%L)",
                     type,
                     dataCode.build()
                 )
@@ -215,7 +230,7 @@ class DataSyncProcessor : AbstractProcessor() {
                     )
                 }
                 mapBlock.addStatement(
-                    "mapSubscriberBySub[%T::class]=mutableListOf(%L)",
+                    "mapSubInfoBySubscriberClazz[%T::class]=mutableListOf(%L)",
                     type,
                     dataCode.build()
                 )
@@ -237,6 +252,7 @@ class DataSyncProcessor : AbstractProcessor() {
             .addProperty(property_field_map())
             .addProperty(property_mapSubscriberBySub())
             .addInitializerBlock(initBlock.build())
+            .addFunction(func_getSubscriberClazzByDataClazz())
             .addFunction(func_getDataSyncSubscriberInfo())
             .addFunction(func_initSubscriberBeansByType())
             .addFunction(func_initSubscriberBeansBySubType())
