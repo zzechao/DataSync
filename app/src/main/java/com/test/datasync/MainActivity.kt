@@ -16,4 +16,19 @@ class MainActivity : AppCompatActivity() {
     @DataSyncBuild
     fun onDataChange(data: Data) {
     }
+
+    @DataSyncBuild
+    fun onIntChange(value: Int) {
+
+    }
+
+    @DataSyncBuild
+    fun onListChange(list: List<Data>) {
+
+    }
+
+    @DataSyncBuild
+    fun onMutableListChange(list: MutableList<Data>) {
+
+    }
 }

@@ -293,6 +293,11 @@ class DataSyncProcessor : AbstractProcessor() {
                         val param = element.parameters.firstOrNull() ?: return
                         val type = param.asType()
 
+
+                        if (type == Int::class || type == Long::class || type == listOf<Any>()::class) {
+                            return
+                        }
+
                         val typeInit = {
                             val list = subscriberBeansByType[type] ?: mutableListOf()
                             list.add(
