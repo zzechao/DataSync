@@ -1,6 +1,6 @@
 package com.test.datasync
 
-import com.zhouz.datasync.DataSyncBuild
+import com.zhouz.datasync.DataSyncObserver
 
 
 /**
@@ -10,7 +10,7 @@ import com.zhouz.datasync.DataSyncBuild
  */
 open class SuperController {
 
-    @DataSyncBuild(filedNames = ["test"])
+    @DataSyncObserver(filedNames = ["test"])
     fun onSuperDataChange(data: Data) {
     }
 }

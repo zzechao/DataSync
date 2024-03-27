@@ -23,7 +23,7 @@ class TestZhouz {
     }
 
 
-    @DataSyncBuild
+    @DataSyncObserver
     fun onTestData(testData: TestData) {
     }
 }

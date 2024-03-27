@@ -12,9 +12,15 @@ import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
+import com.zhouz.datasync.Constant.clazz_data_differ_name
+import com.zhouz.datasync.Constant.clazz_data_sync_interface
+import com.zhouz.datasync.Constant.clazz_info_name
+import com.zhouz.datasync.Constant.default_factory_name
+import com.zhouz.datasync.Constant.packageName
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Filer
 import javax.annotation.processing.ProcessingEnvironment
@@ -42,9 +48,6 @@ import kotlin.reflect.KClass
 class DataSyncProcessor : AbstractProcessor() {
 
     private var clazzName: String? = null
-
-    private val packageName = "com.zhouz.datasync"
-    private val defaultClazzName = "DataSyncFactory"
 
     private val OPTION_DATA_SYNC_CLAZZ_NAME = "dataSyncClazzName"
 
@@ -76,7 +79,7 @@ class DataSyncProcessor : AbstractProcessor() {
 
     override fun getSupportedAnnotationTypes(): MutableSet<String> {
         val annotations: MutableSet<String> = LinkedHashSet()
-        annotations.add(DataSyncBuild::class.java.canonicalName)
+        annotations.add(DataSyncObserver::class.java.canonicalName)
         return annotations
     }
 
@@ -111,20 +114,25 @@ class DataSyncProcessor : AbstractProcessor() {
      */
     private fun createInfoFile() {
         val lastPeriod: Int = clazzName?.lastIndexOf('.') ?: -1
-        val indexPackage: String = if (lastPeriod != -1) clazzName?.substring(0, lastPeriod) ?: packageName else packageName
-        val clazzName = if (lastPeriod != -1) clazzName?.substring(lastPeriod + 1, clazzName?.length ?: 0) ?: defaultClazzName else defaultClazzName
+        val indexPackage: String = if (lastPeriod != -1) clazzName?.substring(0, lastPeriod)
+            ?: packageName else packageName
+        val clazzName =
+            if (lastPeriod != -1) clazzName?.substring(lastPeriod + 1, clazzName?.length ?: 0)
+                ?: default_factory_name else default_factory_name
 
-        val interface_clazz = ClassName("com.zhouz.datasync", "IDataSyncSubscriber")
+        val interface_clazz = ClassName(packageName, clazz_data_sync_interface)
+        val info_clazz = ClassName(packageName, clazz_info_name)
+        val data_clazz_differ = ClassName(packageName, clazz_data_differ_name)
 
         // property mapSubscriber
         val property_field_map = {
             val field_value_clazz =
                 MUTABLE_LIST.parameterizedBy(
                     KClass::class.asClassName()
-                        .parameterizedBy(WildcardTypeName.producerOf(Any::class))
+                        .parameterizedBy(TypeVariableName("*"))
                 )
             val field_key_clazz =
-                KClass::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class))
+                KClass::class.asClassName().parameterizedBy(TypeVariableName("*"))
             val field_map_clazz = MUTABLE_MAP.parameterizedBy(field_key_clazz, field_value_clazz)
             PropertySpec.builder("mapSubscriberByData", field_map_clazz)
                 .addModifiers(KModifier.PRIVATE)
@@ -138,11 +146,14 @@ class DataSyncProcessor : AbstractProcessor() {
         val property_mapSubscriberBySub = {
             val field_value_clazz =
                 MUTABLE_LIST.parameterizedBy(
-                    DataSyncSubscriberInfo::class.asClassName()
-                        .parameterizedBy(WildcardTypeName.producerOf(Any::class))
+                    info_clazz.parameterizedBy(
+                        WildcardTypeName.producerOf(
+                            data_clazz_differ.parameterizedBy(TypeVariableName("*"))
+                        )
+                    )
                 )
             val field_key_clazz =
-                KClass::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class))
+                KClass::class.asClassName().parameterizedBy(TypeVariableName("*"))
             val field_map_clazz = MUTABLE_MAP.parameterizedBy(field_key_clazz, field_value_clazz)
             PropertySpec.builder("mapSubInfoBySubscriberClazz", field_map_clazz)
                 .addModifiers(KModifier.PRIVATE)
@@ -156,10 +167,14 @@ class DataSyncProcessor : AbstractProcessor() {
             val returns_func_getdatasyncsubscriberinfo =
                 MUTABLE_LIST.parameterizedBy(
                     KClass::class.asClassName()
-                        .parameterizedBy(WildcardTypeName.producerOf(Any::class))
+                        .parameterizedBy(TypeVariableName("*"))
                 )
             val clazz_parameterspec_getdatasyncsubscriberinfo =
-                KClass::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class))
+                KClass::class.asClassName().parameterizedBy(
+                    WildcardTypeName.producerOf(
+                        data_clazz_differ.parameterizedBy(TypeVariableName("*"))
+                    )
+                )
             val func_parameterspec_getdatasyncsubscriberinfo =
                 ParameterSpec.builder("clazz", clazz_parameterspec_getdatasyncsubscriberinfo)
                     .build()
@@ -176,11 +191,16 @@ class DataSyncProcessor : AbstractProcessor() {
         val func_getDataSyncSubscriberInfo = {
             val returns_func_getdatasyncsubscriberinfo =
                 MUTABLE_LIST.parameterizedBy(
-                    DataSyncSubscriberInfo::class.asClassName()
-                        .parameterizedBy(WildcardTypeName.producerOf(Any::class))
+                    info_clazz.parameterizedBy(
+                        WildcardTypeName.producerOf(
+                            data_clazz_differ.parameterizedBy(
+                                TypeVariableName("*")
+                            )
+                        )
+                    )
                 )
             val clazz_parameterspec_getdatasyncsubscriberinfo =
-                KClass::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(Any::class))
+                KClass::class.asClassName().parameterizedBy(TypeVariableName("*"))
             val func_parameterspec_getdatasyncsubscriberinfo =
                 ParameterSpec.builder("clazz", clazz_parameterspec_getdatasyncsubscriberinfo)
                     .build()
@@ -227,14 +247,12 @@ class DataSyncProcessor : AbstractProcessor() {
                         dataCode.add(",")
                     }
                     dataCode.add(
-                        "%T(methodName=%S,dataClazz=%T::class,subscriberClazz=%T::class,dispatcher=Dispatcher.%L,filedNames=arrayOf(%L))",
-                        DataSyncSubscriberInfo::class.asClassName()
-                            .parameterizedBy(subscriberBean.type.asTypeName()),
+                        "%T(methodName=%S,dataClazz=%T::class,subscriberClazz=%T::class,dispatcher=Dispatcher.%L)",
+                        info_clazz.parameterizedBy(subscriberBean.type.asTypeName()),
                         subscriberBean.funcName,
                         subscriberBean.type.asTypeName(),
                         subscriberBean.clazzElement.asType(),
-                        subscriberBean.dispatcher,
-                        subscriberBean.filedNames.joinToString(separator = ",") { "\"$it\"" }
+                        subscriberBean.dispatcher
                     )
                 }
                 mapBlock.addStatement(
@@ -287,9 +305,8 @@ class DataSyncProcessor : AbstractProcessor() {
                     if (checkHasNoErrors(element)) {
                         val classElement = element.enclosingElement as TypeElement
                         val funcName = element.simpleName
-                        val annotationElement = element.getAnnotation(DataSyncBuild::class.java)
+                        val annotationElement = element.getAnnotation(DataSyncObserver::class.java)
                         val threadName = annotationElement.threadName
-                        val fieldName = annotationElement.filedNames
                         val param = element.parameters.firstOrNull() ?: return
                         val type = param.asType()
 
@@ -305,7 +322,6 @@ class DataSyncProcessor : AbstractProcessor() {
                                     type,
                                     funcName,
                                     threadName,
-                                    fieldName,
                                     classElement
                                 )
                             )
@@ -320,7 +336,6 @@ class DataSyncProcessor : AbstractProcessor() {
                                     type,
                                     funcName,
                                     threadName,
-                                    fieldName,
                                     classElement
                                 )
                             )

@@ -1,6 +1,6 @@
 package com.test.datasync
 
-import com.zhouz.datasync.DataSyncBuild
+import com.zhouz.datasync.DataSyncObserver
 import com.zhouz.datasync.Dispatcher
 
 
@@ -10,18 +10,18 @@ import com.zhouz.datasync.Dispatcher
  * description：TODO
  */
 class DataController {
-    @DataSyncBuild(
-        threadName = Dispatcher.Async, filedNames = ["test", "name"]
+    @DataSyncObserver(
+        threadName = Dispatcher.Async
     )
     fun onDataChange(data: Data) {
     }
 
-    @DataSyncBuild
+    @DataSyncObserver
     fun onData2Change(data1: Data1) {
 
     }
 
-    @DataSyncBuild
+    @DataSyncObserver
     fun onDataSameChange(data: com.test.datasync.data.Data) {
 
     }

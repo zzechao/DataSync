@@ -14,6 +14,5 @@ class SubscriberBean(
     val type: TypeMirror,
     val funcName: Name,
     val dispatcher: Dispatcher,
-    val filedNames: Array<String>,
     val clazzElement: TypeElement
 )
