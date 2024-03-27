@@ -45,3 +45,9 @@ dependencies {
 // 如果需要 mock final 类或方法的话，还要引入 mockito-inline 依赖
     testImplementation 'org.mockito:mockito-inline:3.6.28'
 }
+
+kapt {
+    arguments {
+        arg('dataSyncClazzName', 'com.test.DataSyncIntercept')
+    }
+}

@@ -1,4 +1,7 @@
-package com.zhouz.datasync
+package com.test.datasync
+
+import com.zhouz.datasync.DataSyncBuild
+import com.zhouz.datasync.Dispatcher
 
 
 /**
@@ -8,7 +11,7 @@ package com.zhouz.datasync
  */
 class DataController {
     @DataSyncBuild(
-        threadName = ThreadMode.AYSN, filedNames = ["test", "name"]
+        threadName = Dispatcher.Async, filedNames = ["test", "name"]
     )
     fun onDataChange(data: Data) {
     }
@@ -19,7 +22,7 @@ class DataController {
     }
 
     @DataSyncBuild
-    fun onDataSameChange(data: com.zhouz.datasync.data.Data) {
+    fun onDataSameChange(data: com.test.datasync.data.Data) {
 
     }
 }

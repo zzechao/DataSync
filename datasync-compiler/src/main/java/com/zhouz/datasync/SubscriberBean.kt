@@ -13,7 +13,7 @@ import javax.lang.model.type.TypeMirror
 class SubscriberBean(
     val type: TypeMirror,
     val funcName: Name,
-    val threadName: ThreadMode,
+    val dispatcher: Dispatcher,
     val filedNames: Array<String>,
     val clazzElement: TypeElement
 )

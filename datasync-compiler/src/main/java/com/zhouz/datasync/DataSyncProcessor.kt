@@ -41,7 +41,12 @@ import kotlin.reflect.KClass
 @SupportedAnnotationTypes("com.zhouz.datasync.DataSyncBuild")
 class DataSyncProcessor : AbstractProcessor() {
 
+    private var clazzName: String? = null
+
     private val packageName = "com.zhouz.datasync"
+    private val defaultClazzName = "DataSyncFactory"
+
+    private val OPTION_DATA_SYNC_CLAZZ_NAME = "dataSyncClazzName"
 
     @Volatile
     private var isInit = false
@@ -64,6 +69,7 @@ class DataSyncProcessor : AbstractProcessor() {
             logger = Logger(processingEnv.messager)
             elementUtils = processingEnv.elementUtils
             typeUtils = processingEnv.typeUtils
+            clazzName = processingEnv.options[OPTION_DATA_SYNC_CLAZZ_NAME]
             logger.info("init end")
         }
     }
@@ -104,7 +110,9 @@ class DataSyncProcessor : AbstractProcessor() {
      * 创建订阅的file
      */
     private fun createInfoFile() {
-        //val syncClass = ClassName(packageName, "DataSync_Index")
+        val lastPeriod: Int = clazzName?.lastIndexOf('.') ?: -1
+        val indexPackage: String = if (lastPeriod != -1) clazzName?.substring(0, lastPeriod) ?: packageName else packageName
+        val clazzName = if (lastPeriod != -1) clazzName?.substring(lastPeriod + 1, clazzName?.length ?: 0) ?: defaultClazzName else defaultClazzName
 
         val interface_clazz = ClassName("com.zhouz.datasync", "IDataSyncSubscriber")
 
@@ -219,13 +227,13 @@ class DataSyncProcessor : AbstractProcessor() {
                         dataCode.add(",")
                     }
                     dataCode.add(
-                        "%T(methodName=%S,dataClazz=%T::class,subscriberClazz=%T::class,threadMode=ThreadMode.%L,filedNames=arrayOf(%L))",
+                        "%T(methodName=%S,dataClazz=%T::class,subscriberClazz=%T::class,dispatcher=Dispatcher.%L,filedNames=arrayOf(%L))",
                         DataSyncSubscriberInfo::class.asClassName()
                             .parameterizedBy(subscriberBean.type.asTypeName()),
                         subscriberBean.funcName,
                         subscriberBean.type.asTypeName(),
                         subscriberBean.clazzElement.asType(),
-                        subscriberBean.threadName,
+                        subscriberBean.dispatcher,
                         subscriberBean.filedNames.joinToString(separator = ",") { "\"$it\"" }
                     )
                 }
@@ -246,7 +254,7 @@ class DataSyncProcessor : AbstractProcessor() {
         initBlock.addStatement("initSubscriberBeansBySubType()")
 
         // class DataSync_Index
-        val clazz = TypeSpec.classBuilder("DataSync_Index")
+        val clazz = TypeSpec.classBuilder(clazzName)
             .addKdoc("数据同步的订阅处理类")
             .addSuperinterface(interface_clazz)
             .addProperty(property_field_map())
@@ -259,8 +267,9 @@ class DataSyncProcessor : AbstractProcessor() {
             .build()
 
         // file DataSync_Index
-        val file = FileSpec.builder(packageName, "DataSync_Index")
+        val file = FileSpec.builder(indexPackage, clazzName)
             .addImport("com.zhouz.datasync", "DataSyncSubscriberInfo")
+            .addImport("com.zhouz.datasync", "Dispatcher")
             .addType(clazz)
             .build()
 

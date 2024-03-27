@@ -1,7 +1,9 @@
-package com.zhouz.datasync
+package com.test.datasync
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import com.zhouz.datasync.DataSyncBuild
+import com.zhouz.datasync.R
 
 
 class MainActivity : AppCompatActivity() {

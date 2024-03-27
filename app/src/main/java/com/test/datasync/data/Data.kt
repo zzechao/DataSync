@@ -1,4 +1,4 @@
-package com.zhouz.datasync.data
+package com.test.datasync.data
 
 
 /**
