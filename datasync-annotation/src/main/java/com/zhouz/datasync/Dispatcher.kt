@@ -7,8 +7,9 @@ package com.zhouz.datasync
  * description：线程模式
  */
 enum class Dispatcher {
+    Posting,
     Main,
-    IO,
-    Async,
-    AsyncPost
+    MainPost,
+    Background,
+    BackgroundPost
 }
