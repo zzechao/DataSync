@@ -3,6 +3,7 @@ package com.zhouz.datasync
 import com.google.auto.service.AutoService
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.DelicateKotlinPoetApi
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
@@ -79,7 +80,7 @@ class DataSyncProcessor : AbstractProcessor() {
 
     override fun getSupportedAnnotationTypes(): MutableSet<String> {
         val annotations: MutableSet<String> = LinkedHashSet()
-        annotations.add(DataSyncObserver::class.java.canonicalName)
+        annotations.add(DataObserver::class.java.canonicalName)
         return annotations
     }
 
@@ -112,6 +113,7 @@ class DataSyncProcessor : AbstractProcessor() {
     /**
      * 创建订阅的file
      */
+    @OptIn(DelicateKotlinPoetApi::class)
     private fun createInfoFile() {
         val lastPeriod: Int = clazzName?.lastIndexOf('.') ?: -1
         val indexPackage: String = if (lastPeriod != -1) clazzName?.substring(0, lastPeriod)
@@ -120,21 +122,25 @@ class DataSyncProcessor : AbstractProcessor() {
             if (lastPeriod != -1) clazzName?.substring(lastPeriod + 1, clazzName?.length ?: 0)
                 ?: default_factory_name else default_factory_name
 
-        val interface_clazz = ClassName(packageName, clazz_data_sync_interface)
-        val info_clazz = ClassName(packageName, clazz_info_name)
-        val data_clazz_differ = ClassName(packageName, clazz_data_differ_name)
+        val interfaceClazz = ClassName(packageName, clazz_data_sync_interface)
+        val infoClazz = ClassName(packageName, clazz_info_name)
+        val dataClazzDiffer = ClassName(packageName, clazz_data_differ_name)
 
         // property mapSubscriber
-        val property_field_map = {
-            val field_value_clazz =
+        val propertyFieldMap = {
+            val fieldValueClazz =
                 MUTABLE_LIST.parameterizedBy(
                     KClass::class.asClassName()
                         .parameterizedBy(TypeVariableName("*"))
                 )
-            val field_key_clazz =
-                KClass::class.asClassName().parameterizedBy(TypeVariableName("*"))
-            val field_map_clazz = MUTABLE_MAP.parameterizedBy(field_key_clazz, field_value_clazz)
-            PropertySpec.builder("mapSubscriberByData", field_map_clazz)
+            val fieldKeyClazz =
+                KClass::class.asClassName().parameterizedBy(
+                    WildcardTypeName.producerOf(
+                        dataClazzDiffer.parameterizedBy(TypeVariableName("*"))
+                    )
+                )
+            val fieldMapClazz = MUTABLE_MAP.parameterizedBy(fieldKeyClazz, fieldValueClazz)
+            PropertySpec.builder("mapSubscriberByData", fieldMapClazz)
                 .addModifiers(KModifier.PRIVATE)
                 .addKdoc("数据同步订阅Map")
                 .initializer("mutableMapOf()")
@@ -143,19 +149,19 @@ class DataSyncProcessor : AbstractProcessor() {
 
 
         // property mapSubscriberBySub
-        val property_mapSubscriberBySub = {
-            val field_value_clazz =
+        val propertyMapSubscriberBySub = {
+            val fieldValueClazz =
                 MUTABLE_LIST.parameterizedBy(
-                    info_clazz.parameterizedBy(
+                    infoClazz.parameterizedBy(
                         WildcardTypeName.producerOf(
-                            data_clazz_differ.parameterizedBy(TypeVariableName("*"))
+                            dataClazzDiffer.parameterizedBy(TypeVariableName("*"))
                         )
                     )
                 )
-            val field_key_clazz =
+            val fieldKeyClazz =
                 KClass::class.asClassName().parameterizedBy(TypeVariableName("*"))
-            val field_map_clazz = MUTABLE_MAP.parameterizedBy(field_key_clazz, field_value_clazz)
-            PropertySpec.builder("mapSubInfoBySubscriberClazz", field_map_clazz)
+            val fieldMapClazz = MUTABLE_MAP.parameterizedBy(fieldKeyClazz, fieldValueClazz)
+            PropertySpec.builder("mapSubInfoBySubscriberClazz", fieldMapClazz)
                 .addModifiers(KModifier.PRIVATE)
                 .addKdoc("数据同步订阅Map")
                 .initializer("mutableMapOf()")
@@ -163,57 +169,57 @@ class DataSyncProcessor : AbstractProcessor() {
         }
 
         // func getSubscriberClazzByDataClazz
-        val func_getSubscriberClazzByDataClazz = {
-            val returns_func_getdatasyncsubscriberinfo =
+        val funcGetSubscriberClazzByDataClazz = {
+            val returnsFuncGetDataSyncSubscriberInfo =
                 MUTABLE_LIST.parameterizedBy(
                     KClass::class.asClassName()
                         .parameterizedBy(TypeVariableName("*"))
                 )
-            val clazz_parameterspec_getdatasyncsubscriberinfo =
+            val clazzParameterSpecGetDataSyncSubscriberInfo =
                 KClass::class.asClassName().parameterizedBy(
                     WildcardTypeName.producerOf(
-                        data_clazz_differ.parameterizedBy(TypeVariableName("*"))
+                        dataClazzDiffer.parameterizedBy(TypeVariableName("*"))
                     )
                 )
-            val func_parameterspec_getdatasyncsubscriberinfo =
-                ParameterSpec.builder("clazz", clazz_parameterspec_getdatasyncsubscriberinfo)
+            val funcParameterSpecGetDataSyncSubscriberInfo =
+                ParameterSpec.builder("clazz", clazzParameterSpecGetDataSyncSubscriberInfo)
                     .build()
             FunSpec.builder("getSubscriberClazzByDataClazz")
                 .addModifiers(KModifier.OVERRIDE)
-                .addParameter(func_parameterspec_getdatasyncsubscriberinfo)
-                .returns(returns_func_getdatasyncsubscriberinfo.copy(true))
+                .addParameter(funcParameterSpecGetDataSyncSubscriberInfo)
+                .returns(returnsFuncGetDataSyncSubscriberInfo.copy(true))
                 .addStatement("return mapSubscriberByData.get(clazz)")
                 .build()
         }
 
 
         // func getDataSyncSubscriberInfo
-        val func_getDataSyncSubscriberInfo = {
-            val returns_func_getdatasyncsubscriberinfo =
+        val funcGetDataSyncSubscriberInfo = {
+            val returnsFuncGetDataSyncSubscriberInfo =
                 MUTABLE_LIST.parameterizedBy(
-                    info_clazz.parameterizedBy(
+                    infoClazz.parameterizedBy(
                         WildcardTypeName.producerOf(
-                            data_clazz_differ.parameterizedBy(
+                            dataClazzDiffer.parameterizedBy(
                                 TypeVariableName("*")
                             )
                         )
                     )
                 )
-            val clazz_parameterspec_getdatasyncsubscriberinfo =
+            val clazzParameterSpecGetDataSyncSubscriberInfo =
                 KClass::class.asClassName().parameterizedBy(TypeVariableName("*"))
-            val func_parameterspec_getdatasyncsubscriberinfo =
-                ParameterSpec.builder("clazz", clazz_parameterspec_getdatasyncsubscriberinfo)
+            val funcParameterSpecGetDataSyncSubscriberInfo =
+                ParameterSpec.builder("clazz", clazzParameterSpecGetDataSyncSubscriberInfo)
                     .build()
             FunSpec.builder("getSubInfoBySubscriberClazz")
                 .addModifiers(KModifier.OVERRIDE)
-                .addParameter(func_parameterspec_getdatasyncsubscriberinfo)
-                .returns(returns_func_getdatasyncsubscriberinfo.copy(true))
+                .addParameter(funcParameterSpecGetDataSyncSubscriberInfo)
+                .returns(returnsFuncGetDataSyncSubscriberInfo.copy(true))
                 .addStatement("return mapSubInfoBySubscriberClazz.get(clazz)")
                 .build()
         }
 
         // func initSubscriberBeansBySubType
-        val func_initSubscriberBeansByType = {
+        val funcInitSubscriberBeansByType = {
             val mapBlock = CodeBlock.builder()
             subscriberBeansByType.forEach { (type, list) ->
                 val dataCode = CodeBlock.builder()
@@ -238,7 +244,7 @@ class DataSyncProcessor : AbstractProcessor() {
         }
 
         // func initSubscriberBeansBySubType
-        val func_initSubscriberBeansBySubType = {
+        val funcInitSubscriberBeansBySubType = {
             val mapBlock = CodeBlock.builder()
             subscriberBeansBySubType.forEach { (type, list) ->
                 val dataCode = CodeBlock.builder()
@@ -248,7 +254,7 @@ class DataSyncProcessor : AbstractProcessor() {
                     }
                     dataCode.add(
                         "%T(methodName=%S,dataClazz=%T::class,subscriberClazz=%T::class,dispatcher=Dispatcher.%L)",
-                        info_clazz.parameterizedBy(subscriberBean.type.asTypeName()),
+                        infoClazz.parameterizedBy(subscriberBean.type.asTypeName()),
                         subscriberBean.funcName,
                         subscriberBean.type.asTypeName(),
                         subscriberBean.clazzElement.asType(),
@@ -274,14 +280,14 @@ class DataSyncProcessor : AbstractProcessor() {
         // class DataSync_Index
         val clazz = TypeSpec.classBuilder(clazzName)
             .addKdoc("数据同步的订阅处理类")
-            .addSuperinterface(interface_clazz)
-            .addProperty(property_field_map())
-            .addProperty(property_mapSubscriberBySub())
+            .addSuperinterface(interfaceClazz)
+            .addProperty(propertyFieldMap())
+            .addProperty(propertyMapSubscriberBySub())
             .addInitializerBlock(initBlock.build())
-            .addFunction(func_getSubscriberClazzByDataClazz())
-            .addFunction(func_getDataSyncSubscriberInfo())
-            .addFunction(func_initSubscriberBeansByType())
-            .addFunction(func_initSubscriberBeansBySubType())
+            .addFunction(funcGetSubscriberClazzByDataClazz())
+            .addFunction(funcGetDataSyncSubscriberInfo())
+            .addFunction(funcInitSubscriberBeansByType())
+            .addFunction(funcInitSubscriberBeansBySubType())
             .build()
 
         // file DataSync_Index
@@ -305,46 +311,45 @@ class DataSyncProcessor : AbstractProcessor() {
                     if (checkHasNoErrors(element)) {
                         val classElement = element.enclosingElement as TypeElement
                         val funcName = element.simpleName
-                        val annotationElement = element.getAnnotation(DataSyncObserver::class.java)
+                        val annotationElement = element.getAnnotation(DataObserver::class.java)
                         val threadName = annotationElement.threadName
                         val param = element.parameters.firstOrNull() ?: return
                         val type = param.asType()
-
-
-                        if (type == Int::class || type == Long::class || type == listOf<Any>()::class) {
-                            return
-                        }
-
-                        val typeInit = {
-                            val list = subscriberBeansByType[type] ?: mutableListOf()
-                            list.add(
-                                SubscriberBean(
-                                    type,
-                                    funcName,
-                                    threadName,
-                                    classElement
+                        val typeDifferClazz = typeUtils.erasure(elementUtils.getTypeElement("$packageName.$clazz_data_differ_name").asType())
+                        if (typeUtils.isAssignable(type, typeDifferClazz)) {
+                            val typeInit = {
+                                val list = subscriberBeansByType[type] ?: mutableListOf()
+                                list.add(
+                                    SubscriberBean(
+                                        type,
+                                        funcName,
+                                        threadName,
+                                        classElement
+                                    )
                                 )
-                            )
-                            subscriberBeansByType[type] = list
-                        }
-                        typeInit.invoke()
+                                subscriberBeansByType[type] = list
+                            }
+                            typeInit.invoke()
 
-                        val subInit = {
-                            val list = subscriberBeansBySubType[classElement] ?: mutableListOf()
-                            list.add(
-                                SubscriberBean(
-                                    type,
-                                    funcName,
-                                    threadName,
-                                    classElement
+                            val subInit = {
+                                val list = subscriberBeansBySubType[classElement] ?: mutableListOf()
+                                list.add(
+                                    SubscriberBean(
+                                        type,
+                                        funcName,
+                                        threadName,
+                                        classElement
+                                    )
                                 )
-                            )
-                            subscriberBeansBySubType[classElement] = list
+                                subscriberBeansBySubType[classElement] = list
+                            }
+                            subInit.invoke()
+                        } else {
+                            logger.warning("type $type not interface $packageName.$clazz_data_differ_name")
                         }
-                        subInit.invoke()
                     }
                 } else {
-                    logger.error("@DataSyncBuild is only valid for methods")
+                    logger.error("@DataObserver is only valid for methods")
                 }
             }
         }

@@ -1,6 +1,6 @@
 package com.test.datasync
 
-import com.zhouz.datasync.DataSyncObserver
+import com.zhouz.datasync.DataObserver
 
 
 /**
@@ -9,7 +9,7 @@ import com.zhouz.datasync.DataSyncObserver
  * description：TODO
  */
 class DataController1 : SuperController() {
-    @DataSyncObserver()
+    @DataObserver()
     fun onDataChange(data: Data) {
     }
 }

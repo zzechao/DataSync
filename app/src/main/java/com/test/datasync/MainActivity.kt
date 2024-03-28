@@ -2,7 +2,7 @@ package com.test.datasync
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.zhouz.datasync.DataSyncObserver
+import com.zhouz.datasync.DataObserver
 import com.zhouz.datasync.R
 
 
@@ -13,21 +13,21 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    @DataSyncObserver
+    @DataObserver
     fun onDataChange(data: Data) {
     }
 
-    @DataSyncObserver
+    @DataObserver
     fun onIntChange(value: Int) {
 
     }
 
-    @DataSyncObserver
+    @DataObserver
     fun onListChange(list: List<Data>) {
 
     }
 
-    @DataSyncObserver
+    @DataObserver
     fun onMutableListChange(list: MutableList<Data>) {
 
     }

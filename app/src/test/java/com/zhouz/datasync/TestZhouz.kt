@@ -1,8 +1,10 @@
 package com.zhouz.datasync
 
+import com.test.DataSyncIntercept
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
+import javax.xml.datatype.DatatypeFactory
 
 
 /**
@@ -19,11 +21,11 @@ class TestZhouz {
 //        Mockito.`when`(context.applicationContext).thenReturn(applicationContext)
 //        CoreLog.init(context)
 //        main("zhouz")
-        DataSync_Index().getDataSyncSubscriberInfo(Any::class)
+        DataSyncIntercept().getSubInfoBySubscriberClazz(Any::class)
     }
 
 
-    @DataSyncObserver
+    @DataObserver
     fun onTestData(testData: TestData) {
     }
 }
