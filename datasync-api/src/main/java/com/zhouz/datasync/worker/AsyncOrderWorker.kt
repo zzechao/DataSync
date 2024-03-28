@@ -6,7 +6,9 @@ package com.zhouz.datasync.worker
  * @date: 2024/3/28 19:23
  * description：Dispatcher.BackgroundPost执行队列
  */
-class BackgroundPostWorker: Runnable {
+class AsyncOrderWorker: Runnable {
+
+
 
     override fun run() {
     }
