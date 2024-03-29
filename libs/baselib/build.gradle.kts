@@ -39,11 +39,13 @@ dependencies {
 
     api(project(":datasync-api"))
     kapt(project(":datasync-compiler"))
+
+    api("com.github.silencedut.hub:hub:2.9.2")
+    kapt("com.github.silencedut.hub:hub-compiler:2.9.2")
 }
 
 kapt {
     arguments {
-        arg("option_data_sync_clazz_name", "${android.namespace}.DataSyncIntercept")
         arg("option_data_package", "${android.namespace}")
     }
 }

@@ -39,11 +39,12 @@ dependencies {
 
     implementation(project(":libs:baselib"))
     kapt(project(":datasync-compiler"))
+
+    kapt("com.github.silencedut.hub:hub-compiler:2.9.5")
 }
 
 kapt {
     arguments {
-        arg("option_data_sync_clazz_name", "${android.namespace}.DataSyncIntercept")
         arg("option_data_package", "${android.namespace}")
     }
 }

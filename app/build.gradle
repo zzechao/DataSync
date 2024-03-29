@@ -50,7 +50,6 @@ dependencies {
 
 kapt {
     arguments {
-        arg('option_data_sync_clazz_name', "${android.defaultConfig.applicationId}.DataSyncIntercept")
         arg('option_data_package', "${android.defaultConfig.applicationId}")
     }
 }
