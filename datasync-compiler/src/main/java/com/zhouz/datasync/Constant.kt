@@ -6,6 +6,8 @@ package com.zhouz.datasync
 object Constant {
     const val packageName = "com.zhouz.datasync"
 
+    const val clazz_data_event = "IDataEvent"
+
     const val clazz_data_differ_name = "IDataDiffer"
 
     const val clazz_info_name = "DataSyncSubscriberInfo"

@@ -1,6 +1,6 @@
 package com.zhouz.lib1
 
-import com.zhouz.datasync.IDataDiffer
+import com.zhouz.datasync.IDataEvent
 
 
 /**
@@ -8,4 +8,4 @@ import com.zhouz.datasync.IDataDiffer
  * @date: 2024/3/29 12:09
  * description：模块测试查看build文件
  */
-data class BaseData1(val id: Long, val test: String) : IDataDiffer<BaseData1>
+data class BaseData1(val id: Long, val test: String) : IDataEvent

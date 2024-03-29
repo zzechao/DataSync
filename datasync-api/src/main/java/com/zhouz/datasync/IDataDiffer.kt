@@ -5,7 +5,7 @@ package com.zhouz.datasync
  */
 interface IDataDiffer<T> {
 
-    fun areDataSame(newData: T): Boolean = true
+    fun areDataSame(oloData: T, newData: T): Boolean = true
 
-    fun isContentChange(newData: T): Boolean = true
+    fun isContentChange(oloData: T, newData: T): Boolean = true
 }

@@ -19,6 +19,10 @@ object DataWatcher {
 
     internal lateinit var application: Application
 
+    private val constant by lazy {
+        WorkerConstant()
+    }
+
     internal fun manualInstall(application: Application) {
         this.application = application
     }
@@ -28,5 +32,34 @@ object DataWatcher {
      */
     fun attachLog(log: ILog) {
         this.log = log
+    }
+
+    /**
+     * 设置apt生成订阅构造类
+     */
+    fun setFactory(vararg factory: IDataSyncSubscriber) {
+        constant.addFactory(factory)
+    }
+
+    /**
+     * 初始化或者更新订阅数据对象，用来进行
+     */
+    fun updateSubscriberData(observer: Any, vararg dataDiffer: DataDiffer<IDataEvent>) {
+    }
+
+
+    /**
+     * 订阅
+     */
+    fun subscribe(observer: Any) {
+        constant.dataSyncFactories.forEach {
+            it.getSubInfoBySubscriberClazz(observer::class)
+        }
+    }
+
+    /**
+     * 取消订阅
+     */
+    fun unSubscribe(observer: Any) {
     }
 }

@@ -5,16 +5,15 @@ plugins {
 }
 
 android {
-    namespace 'com.zhouz.datasync'
+    namespace 'com.test.datasync'
     compileSdk 33
 
     defaultConfig {
-        applicationId "com.zhouz.datasync"
+        applicationId "com.test.datasync"
         minSdk 16
         targetSdk 33
         versionCode 1
         versionName "1.0"
-
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -31,6 +30,7 @@ android {
     kotlinOptions {
         jvmTarget = '11'
     }
+
 }
 
 dependencies {

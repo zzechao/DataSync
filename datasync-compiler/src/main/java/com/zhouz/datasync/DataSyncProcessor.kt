@@ -17,7 +17,7 @@ import com.squareup.kotlinpoet.TypeVariableName
 import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
-import com.zhouz.datasync.Constant.clazz_data_differ_name
+import com.zhouz.datasync.Constant.clazz_data_event
 import com.zhouz.datasync.Constant.clazz_data_sync_interface
 import com.zhouz.datasync.Constant.clazz_info_name
 import com.zhouz.datasync.Constant.default_factory_name
@@ -126,7 +126,7 @@ class DataSyncProcessor : AbstractProcessor() {
 
         val interfaceClazz = ClassName(packageName, clazz_data_sync_interface)
         val infoClazz = ClassName(packageName, clazz_info_name)
-        val dataClazzDiffer = ClassName(packageName, clazz_data_differ_name)
+        val dataClazzDiffer = ClassName(packageName, clazz_data_event)
 
         // property mapSubscriber
         val propertyFieldMap = {
@@ -137,9 +137,7 @@ class DataSyncProcessor : AbstractProcessor() {
                 )
             val fieldKeyClazz =
                 KClass::class.asClassName().parameterizedBy(
-                    WildcardTypeName.producerOf(
-                        dataClazzDiffer.parameterizedBy(TypeVariableName("*"))
-                    )
+                    WildcardTypeName.producerOf(dataClazzDiffer)
                 )
             val fieldMapClazz = MUTABLE_MAP.parameterizedBy(fieldKeyClazz, fieldValueClazz)
             PropertySpec.builder("mapSubscriberByData", fieldMapClazz)
@@ -155,9 +153,7 @@ class DataSyncProcessor : AbstractProcessor() {
             val fieldValueClazz =
                 MUTABLE_LIST.parameterizedBy(
                     infoClazz.parameterizedBy(
-                        WildcardTypeName.producerOf(
-                            dataClazzDiffer.parameterizedBy(TypeVariableName("*"))
-                        )
+                        WildcardTypeName.producerOf(dataClazzDiffer)
                     )
                 )
             val fieldKeyClazz =
@@ -179,9 +175,7 @@ class DataSyncProcessor : AbstractProcessor() {
                 )
             val clazzParameterSpecGetDataSyncSubscriberInfo =
                 KClass::class.asClassName().parameterizedBy(
-                    WildcardTypeName.producerOf(
-                        dataClazzDiffer.parameterizedBy(TypeVariableName("*"))
-                    )
+                    WildcardTypeName.producerOf(dataClazzDiffer)
                 )
             val funcParameterSpecGetDataSyncSubscriberInfo =
                 ParameterSpec.builder("clazz", clazzParameterSpecGetDataSyncSubscriberInfo)
@@ -200,11 +194,7 @@ class DataSyncProcessor : AbstractProcessor() {
             val returnsFuncGetDataSyncSubscriberInfo =
                 MUTABLE_LIST.parameterizedBy(
                     infoClazz.parameterizedBy(
-                        WildcardTypeName.producerOf(
-                            dataClazzDiffer.parameterizedBy(
-                                TypeVariableName("*")
-                            )
-                        )
+                        WildcardTypeName.producerOf(dataClazzDiffer)
                     )
                 )
             val clazzParameterSpecGetDataSyncSubscriberInfo =
@@ -317,7 +307,7 @@ class DataSyncProcessor : AbstractProcessor() {
                         val threadName = annotationElement.threadName
                         val param = element.parameters.firstOrNull() ?: return
                         val type = param.asType()
-                        val typeDifferClazz = typeUtils.erasure(elementUtils.getTypeElement("$packageName.$clazz_data_differ_name").asType())
+                        val typeDifferClazz = typeUtils.erasure(elementUtils.getTypeElement("$packageName.$clazz_data_event").asType())
                         if (typeUtils.isAssignable(type, typeDifferClazz)) {
                             val typeInit = {
                                 val list = subscriberBeansByType[type] ?: mutableListOf()
@@ -347,7 +337,7 @@ class DataSyncProcessor : AbstractProcessor() {
                             }
                             subInit.invoke()
                         } else {
-                            logger.warning("type $type not interface $packageName.$clazz_data_differ_name")
+                            logger.warning("type $type not interface $packageName.$clazz_data_event")
                         }
                     }
                 } else {

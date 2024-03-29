@@ -4,7 +4,7 @@
     <application>
         <provider
             android:name="com.zhouz.datasync.DataSyncInitializer"
-            android:authorities="${applicationId}.data_sync"
+            android:authorities="${applicationId}.DataSyncInitializer"
             android:exported="false" />
     </application>
 </manifest>
