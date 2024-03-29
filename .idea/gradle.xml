@@ -15,6 +15,10 @@
             <option value="$PROJECT_DIR$/datasync-annotation" />
             <option value="$PROJECT_DIR$/datasync-api" />
             <option value="$PROJECT_DIR$/datasync-compiler" />
+            <option value="$PROJECT_DIR$/libs" />
+            <option value="$PROJECT_DIR$/libs/baselib" />
+            <option value="$PROJECT_DIR$/libs/lib1" />
+            <option value="$PROJECT_DIR$/libs/lib2" />
           </set>
         </option>
       </GradleProjectSettings>

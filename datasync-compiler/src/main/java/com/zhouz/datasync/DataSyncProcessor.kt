@@ -21,6 +21,8 @@ import com.zhouz.datasync.Constant.clazz_data_differ_name
 import com.zhouz.datasync.Constant.clazz_data_sync_interface
 import com.zhouz.datasync.Constant.clazz_info_name
 import com.zhouz.datasync.Constant.default_factory_name
+import com.zhouz.datasync.Constant.option_data_package
+import com.zhouz.datasync.Constant.option_data_sync_clazz_name
 import com.zhouz.datasync.Constant.packageName
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Filer
@@ -45,12 +47,11 @@ import kotlin.reflect.KClass
  * description：数据同步处理器
  */
 @AutoService(Processor::class)
-@SupportedAnnotationTypes("com.zhouz.datasync.DataSyncBuild")
+@SupportedAnnotationTypes("com.zhouz.datasync.DataObserver")
 class DataSyncProcessor : AbstractProcessor() {
 
+    private var modulePackage: String? = null
     private var clazzName: String? = null
-
-    private val OPTION_DATA_SYNC_CLAZZ_NAME = "dataSyncClazzName"
 
     @Volatile
     private var isInit = false
@@ -73,7 +74,8 @@ class DataSyncProcessor : AbstractProcessor() {
             logger = Logger(processingEnv.messager)
             elementUtils = processingEnv.elementUtils
             typeUtils = processingEnv.typeUtils
-            clazzName = processingEnv.options[OPTION_DATA_SYNC_CLAZZ_NAME]
+            clazzName = processingEnv.options[option_data_sync_clazz_name]
+            modulePackage = processingEnv.options[option_data_package]
             logger.info("init end")
         }
     }
@@ -100,7 +102,7 @@ class DataSyncProcessor : AbstractProcessor() {
             if (subscriberBeansByType.isNotEmpty()) {
                 createInfoFile()
             } else {
-                logger.warning("No @DataSyncBuild annotations found")
+                logger.warning("No @DataObserver annotations found")
             }
             writerRoundDone = true
         } catch (e: RuntimeException) {
@@ -117,7 +119,7 @@ class DataSyncProcessor : AbstractProcessor() {
     private fun createInfoFile() {
         val lastPeriod: Int = clazzName?.lastIndexOf('.') ?: -1
         val indexPackage: String = if (lastPeriod != -1) clazzName?.substring(0, lastPeriod)
-            ?: packageName else packageName
+            ?: modulePackage ?: packageName else modulePackage ?: packageName
         val clazzName =
             if (lastPeriod != -1) clazzName?.substring(lastPeriod + 1, clazzName?.length ?: 0)
                 ?: default_factory_name else default_factory_name
@@ -360,56 +362,22 @@ class DataSyncProcessor : AbstractProcessor() {
      */
     private fun checkHasNoErrors(element: ExecutableElement): Boolean {
         if (element.kind != ElementKind.METHOD) {
-            logger.error("@DataSyncBuild is only valid for methods")
+            logger.error("@DataObserver is only valid for methods")
             return false
         }
         if (element.modifiers.contains(Modifier.STATIC)) {
-            logger.error("DataSyncBuild method must not be static")
+            logger.error("DataObserver method must not be static")
             return false
         }
         if (!element.modifiers.contains(Modifier.PUBLIC)) {
-            logger.error("DataSyncBuild method must be public")
+            logger.error("DataObserver method must be public")
             return false
         }
         val parameters = element.parameters
         if (parameters.size != 1) {
-            logger.error("DataSyncBuild method must have exactly 1 parameter")
+            logger.error("DataObserver method must have exactly 1 parameter")
             return false
         }
         return true
-    }
-
-    private fun testMain() {
-        val greeterClass = ClassName(packageName, "Greeter")
-        val file = FileSpec.builder(packageName, "HelloWorld")
-            .addType(
-                TypeSpec.classBuilder("Greeter")
-                    .primaryConstructor(
-                        FunSpec.constructorBuilder()
-                            .addParameter("name", String::class)
-                            .build()
-                    )
-                    .addProperty(
-                        PropertySpec.builder("name", String::class)
-                            .initializer("name")
-                            .build()
-                    )
-                    .addFunction(
-                        FunSpec.builder("greet")
-                            .addStatement("println(%P)", "\"Hello, \$name\"")
-                            .build()
-                    )
-                    .build()
-            )
-            .addFunction(
-                FunSpec.builder("main")
-                    .addParameter("args", String::class, KModifier.VARARG)
-                    .addStatement("%T(args[0]).greet()", greeterClass)
-                    .build()
-            )
-            .build()
-
-
-        file.writeTo(mFiler)
     }
 }
