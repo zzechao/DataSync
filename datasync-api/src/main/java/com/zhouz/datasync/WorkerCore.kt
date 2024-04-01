@@ -1,5 +1,7 @@
 package com.zhouz.datasync
 
+import com.google.common.cache.Cache
+import com.google.common.cache.CacheBuilder
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -9,6 +11,7 @@ import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
 
@@ -36,7 +39,14 @@ class WorkerCore {
     /**
      * 缓存data和订阅Clazz的数据
      */
-    private val cacheMapObserverByData = ConcurrentHashMap<KClass<out IDataEvent>, MutableList<KClass<*>>>()
+    private val cacheMapObserverByData: Cache<KClass<out IDataEvent>, MutableList<KClass<*>>> =
+        CacheBuilder.newBuilder()
+            .concurrencyLevel(4)
+            .maximumSize(20)
+            .initialCapacity(10)
+            .expireAfterWrite(60 * 5, TimeUnit.SECONDS)
+            .expireAfterAccess(60 * 5, TimeUnit.SECONDS)
+            .build()
 
     /**
      * 订阅中的clazz和对象信息列表
@@ -65,11 +75,23 @@ class WorkerCore {
         DataWatcher.logger.i("watching $observer ${infos.size}")
         dataWatchingMap[observer::class]?.let {
             if (it.watchers.none { it.objectWeak.get() == observer }) {
-                it.watchers.add(WatcherObject(WeakReference(observer, referenceQueue)).apply { differInit?.invoke(this) })
+                it.watchers.add(
+                    WatcherObject(
+                        WeakReference(
+                            observer,
+                            referenceQueue
+                        )
+                    ).apply { differInit?.invoke(this) })
             }
         } ?: kotlin.run {
             val watchers = mutableListOf<WatcherObject>()
-            watchers.add(WatcherObject(WeakReference(observer, referenceQueue)).apply { differInit?.invoke(this) })
+            watchers.add(
+                WatcherObject(
+                    WeakReference(
+                        observer,
+                        referenceQueue
+                    )
+                ).apply { differInit?.invoke(this) })
             val dataWatching = DataWatching(infos, watchers)
             dataWatchingMap[observer::class] = dataWatching
         }
@@ -90,13 +112,17 @@ class WorkerCore {
      * post数据
      */
     fun <T : IDataEvent> sendData(data: T) {
-        cacheMapObserverByData[data::class]?.let {
-
-        } ?: kotlin.run {
+        cacheMapObserverByData.get(data::class) {
+            val listObserver = mutableListOf<KClass<*>>()
             dataSyncFactories.forEach {
-                it.getSubscriberClazzByDataClazz(data::class)?.forEach {
-                    dataWatchingMap[it]
+                it.getSubscriberClazzByDataClazz(data::class)?.let {
+                    listObserver.addAll(it)
                 }
+            }
+            listObserver
+        }.let {
+            it.forEach {
+
             }
         }
     }
