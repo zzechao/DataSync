@@ -24,6 +24,7 @@ import com.zhouz.datasync.Constant.default_factory_name
 import com.zhouz.datasync.Constant.option_data_package
 import com.zhouz.datasync.Constant.option_data_sync_clazz_name
 import com.zhouz.datasync.Constant.packageName
+import java.util.concurrent.ConcurrentHashMap
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Filer
 import javax.annotation.processing.ProcessingEnvironment
@@ -127,6 +128,7 @@ class DataSyncProcessor : AbstractProcessor() {
         val interfaceClazz = ClassName(packageName, clazz_data_sync_interface)
         val infoClazz = ClassName(packageName, clazz_info_name)
         val dataClazzDiffer = ClassName(packageName, clazz_data_event)
+        val clazzConcurrentHashMap = ConcurrentHashMap::class.asClassName()
 
         // property mapSubscriber
         val propertyFieldMap = {
@@ -139,11 +141,11 @@ class DataSyncProcessor : AbstractProcessor() {
                 KClass::class.asClassName().parameterizedBy(
                     WildcardTypeName.producerOf(dataClazzDiffer)
                 )
-            val fieldMapClazz = MUTABLE_MAP.parameterizedBy(fieldKeyClazz, fieldValueClazz)
+            val fieldMapClazz = clazzConcurrentHashMap.parameterizedBy(fieldKeyClazz, fieldValueClazz)
             PropertySpec.builder("mapSubscriberByData", fieldMapClazz)
                 .addModifiers(KModifier.PRIVATE)
                 .addKdoc("数据同步订阅Map")
-                .initializer("mutableMapOf()")
+                .initializer("ConcurrentHashMap()")
                 .build()
         }
 
@@ -158,11 +160,11 @@ class DataSyncProcessor : AbstractProcessor() {
                 )
             val fieldKeyClazz =
                 KClass::class.asClassName().parameterizedBy(TypeVariableName("*"))
-            val fieldMapClazz = MUTABLE_MAP.parameterizedBy(fieldKeyClazz, fieldValueClazz)
+            val fieldMapClazz = clazzConcurrentHashMap.parameterizedBy(fieldKeyClazz, fieldValueClazz)
             PropertySpec.builder("mapSubInfoBySubscriberClazz", fieldMapClazz)
                 .addModifiers(KModifier.PRIVATE)
                 .addKdoc("数据同步订阅Map")
-                .initializer("mutableMapOf()")
+                .initializer("ConcurrentHashMap()")
                 .build()
         }
 

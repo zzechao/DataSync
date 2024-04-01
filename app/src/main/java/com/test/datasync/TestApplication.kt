@@ -19,7 +19,7 @@ class TestApplication : Application() {
         super.onCreate()
         val factory = Hub.getImpl(ILib1ModuleApi::class.java).loadFactory()
         val factory2 = Hub.getImpl(ILib2ModuleApi::class.java).loadFactory()
-        Log.i("zzc", "factories:${factory} $factory2")
+
         DataWatcher.setFactory(DataSyncFactory(), com.zhouz.baselib.DataSyncFactory(), factory, factory2)
     }
 }

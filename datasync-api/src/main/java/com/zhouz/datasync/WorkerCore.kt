@@ -1,0 +1,103 @@
+package com.zhouz.datasync
+
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import java.lang.ref.ReferenceQueue
+import java.lang.ref.WeakReference
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArraySet
+import java.util.concurrent.Executors
+import kotlin.reflect.KClass
+
+
+/**
+ * @author:zhouz
+ * @date: 2024/3/28 19:02
+ * description：订阅逻辑核心类
+ */
+class WorkerCore {
+    private val threadName = "DataSyncThreadPool"
+
+    private val context =
+        Executors.newCachedThreadPool { r -> Thread(r, threadName) }.asCoroutineDispatcher()
+
+    internal val workerScope =
+        CoroutineScope(SupervisorJob() + context + CoroutineExceptionHandler { _, _ ->
+
+        })
+
+    /**
+     * 订阅查找类
+     */
+    internal val dataSyncFactories = CopyOnWriteArraySet<IDataSyncSubscriber>()
+
+    /**
+     * 缓存data和订阅Clazz的数据
+     */
+    private val cacheMapObserverByData = ConcurrentHashMap<KClass<out IDataEvent>, MutableList<KClass<*>>>()
+
+    /**
+     * 订阅中的clazz和对象信息列表
+     */
+    internal val dataWatchingMap = ConcurrentHashMap<KClass<*>, DataWatching>()
+
+    /**
+     * 引用队列
+     */
+    internal val referenceQueue = ReferenceQueue<Any>()
+
+    /**
+     * 注解处理factory
+     */
+    fun addFactory(factory: Array<out IDataSyncSubscriber>) {
+        dataSyncFactories.addAll(factory)
+    }
+
+    /**
+     * 正在订阅的对象以及func信息
+     */
+    fun watching(
+        observer: Any, infos: MutableList<DataSyncSubscriberInfo<out IDataEvent>>,
+        differInit: (WatcherObject.() -> Unit)? = null
+    ) {
+        DataWatcher.logger.i("watching $observer ${infos.size}")
+        dataWatchingMap[observer::class]?.let {
+            if (it.watchers.none { it.objectWeak.get() == observer }) {
+                it.watchers.add(WatcherObject(WeakReference(observer, referenceQueue)).apply { differInit?.invoke(this) })
+            }
+        } ?: kotlin.run {
+            val watchers = mutableListOf<WatcherObject>()
+            watchers.add(WatcherObject(WeakReference(observer, referenceQueue)).apply { differInit?.invoke(this) })
+            val dataWatching = DataWatching(infos, watchers)
+            dataWatchingMap[observer::class] = dataWatching
+        }
+    }
+
+    /**
+     * 取消订阅
+     */
+    fun unWatching(observer: Any) {
+        dataWatchingMap[observer::class]?.let { dataWatch ->
+            dataWatch.watchers.firstOrNull { it.objectWeak.get() == observer }?.let {
+                dataWatch.watchers.remove(it)
+            }
+        }
+    }
+
+    /**
+     * post数据
+     */
+    fun <T : IDataEvent> sendData(data: T) {
+        cacheMapObserverByData[data::class]?.let {
+
+        } ?: kotlin.run {
+            dataSyncFactories.forEach {
+                it.getSubscriberClazzByDataClazz(data::class)?.forEach {
+                    dataWatchingMap[it]
+                }
+            }
+        }
+    }
+}

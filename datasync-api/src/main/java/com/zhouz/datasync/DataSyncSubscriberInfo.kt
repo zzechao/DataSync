@@ -13,5 +13,4 @@ class DataSyncSubscriberInfo<T : IDataEvent>(
     val dataClazz: KClass<T>, // 数据KClass
     val subscriberClazz: KClass<*>, // 承载方法的KClass
     val dispatcher: Dispatcher, // 线程模式
-    var curData: T? = null // 当前的值
 )

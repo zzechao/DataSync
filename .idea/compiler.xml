@@ -18,6 +18,9 @@
       <module name="DataSync.aptter-annotation.test" target="17" />
       <module name="DataSync.aptter-compiler.main" target="17" />
       <module name="DataSync.aptter-compiler.test" target="17" />
+      <module name="DataSync.lib" target="17" />
+      <module name="DataSync.lib.main" target="17" />
+      <module name="DataSync.lib.test" target="17" />
     </bytecodeTargetLevel>
   </component>
 </project>
