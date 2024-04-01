@@ -46,6 +46,10 @@ dependencies {
 
     implementation project(':libs:baselib')
     kapt project(':datasync-compiler')
+
+    implementation project(':libs:lib1')
+    implementation project(':libs:lib2')
+    kapt("com.github.silencedut.hub:hub-compiler:2.9.5")
 }
 
 kapt {

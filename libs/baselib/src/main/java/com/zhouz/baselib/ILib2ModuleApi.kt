@@ -6,9 +6,9 @@ import com.zhouz.datasync.IDataSyncSubscriber
 
 /**
  * @author:zhouz
- * @date: 2024/3/29 20:39
- * description：组件化构建(Lib1)
+ * @date: 2024/3/29 21:06
+ * description：组件化构建(Lib2)
  */
-interface ILib1ModuleApi : IHub {
+interface ILib2ModuleApi : IHub {
     fun loadFactory(): IDataSyncSubscriber
 }

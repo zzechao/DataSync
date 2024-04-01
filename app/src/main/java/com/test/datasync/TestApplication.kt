@@ -2,10 +2,10 @@ package com.test.datasync
 
 import android.app.Application
 import android.util.Log
+import com.silencedut.hub.Hub
 import com.zhouz.baselib.ILib1ModuleApi
 import com.zhouz.baselib.ILib2ModuleApi
 import com.zhouz.datasync.DataWatcher
-import java.util.ServiceLoader
 
 
 /**
@@ -17,13 +17,9 @@ class TestApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        val factory = ServiceLoader.load(ILib1ModuleApi::class.java).firstOrNull()?.loadFactory()
-        val factory2 = ServiceLoader.load(ILib2ModuleApi::class.java).firstOrNull()?.loadFactory()
+        val factory = Hub.getImpl(ILib1ModuleApi::class.java).loadFactory()
+        val factory2 = Hub.getImpl(ILib2ModuleApi::class.java).loadFactory()
         Log.i("zzc", "factories:${factory} $factory2")
-        factory?.let {
-            if (factory2 != null) {
-                DataWatcher.setFactory(DataSyncFactory(), com.zhouz.baselib.DataSyncFactory(), it, factory2)
-            }
-        }
+        DataWatcher.setFactory(DataSyncFactory(), com.zhouz.baselib.DataSyncFactory(), factory, factory2)
     }
 }

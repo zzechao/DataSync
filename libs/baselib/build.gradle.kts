@@ -40,8 +40,8 @@ dependencies {
     api(project(":datasync-api"))
     kapt(project(":datasync-compiler"))
 
-    api("com.github.silencedut.hub:hub:2.9.2")
-    kapt("com.github.silencedut.hub:hub-compiler:2.9.2")
+    api("com.github.silencedut.hub:hub:2.9.5")
+    kapt("com.github.silencedut.hub:hub-compiler:2.9.5")
 }
 
 kapt {
