@@ -1,6 +1,8 @@
 package com.test.datasync
 
+import android.util.Log
 import com.zhouz.datasync.DataObserver
+import com.zhouz.datasync.Dispatcher
 
 
 /**
@@ -12,5 +14,10 @@ open class SuperController {
 
     @DataObserver()
     fun onSuperDataChange(data: Data) {
+    }
+
+    @DataObserver(Dispatcher.Origin)
+    open fun onData2Change(data: Data) {
+        Log.i("DataController", "super onData2Change data:$data $this")
     }
 }

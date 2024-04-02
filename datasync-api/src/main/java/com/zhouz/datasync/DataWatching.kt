@@ -32,4 +32,4 @@ internal fun WatcherObject.findDataDiffer(clazz: KClass<out IDataEvent>): DataDi
 /**
  * 差分数据模型
  */
-data class DataDiffer<T : IDataEvent>(var curData: T?, val differ: IDataDiffer<T>? = null)
+data class DataDiffer<T : IDataEvent>(var curData: T?, val differ: IDataDiffer<out IDataEvent>? = null)

@@ -21,7 +21,7 @@ class TestZhouz {
 //        Mockito.`when`(context.applicationContext).thenReturn(applicationContext)
 //        CoreLog.init(context)
 //        main("zhouz")
-        DataSyncIntercept().getSubInfoBySubscriberClazz(Any::class)
+        //DataSyncIntercept().getSubInfoBySubscriberClazz(Any::class)
     }
 
 

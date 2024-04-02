@@ -16,8 +16,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         DataWatcher.subscribe(this)
         setContentView(R.layout.activity_main)
-        repeat(5) {
-            thread { DataWatcher.sendData(Data(it, it, "zzc$it")) }
+        repeat(3) {
+            thread { DataWatcher.sendData(Data(0, it, "zzc${it}")) }
         }
     }
 

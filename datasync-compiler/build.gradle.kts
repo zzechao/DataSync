@@ -11,6 +11,7 @@ dependencies {
     kapt("com.google.auto.service:auto-service:1.0")
     implementation(project(":datasync-annotation"))
     implementation("com.squareup:kotlinpoet:1.16.0")
+    implementation(kotlin("reflect"))
 }
 
 java {

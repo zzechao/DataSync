@@ -1,5 +1,6 @@
 package com.zhouz.datasync
 
+import android.os.Looper
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -39,13 +40,14 @@ class WorkerCore {
     /**
      * 缓存data和订阅Clazz的数据
      */
-    private val cacheMapObserverByData: Cache<KClass<out IDataEvent>, MutableList<KClass<*>>> =
+    private val cacheMapObserverByData:
+            Cache<KClass<out IDataEvent>, MutableList<DataSyncSubscriberInfo<out IDataEvent>>> =
         CacheBuilder.newBuilder()
             .concurrencyLevel(4)
-            .maximumSize(20)
-            .initialCapacity(10)
-            .expireAfterWrite(60 * 5, TimeUnit.SECONDS)
-            .expireAfterAccess(60 * 5, TimeUnit.SECONDS)
+            .maximumSize(10)
+            .initialCapacity(5)
+            .expireAfterWrite(60 * 2, TimeUnit.SECONDS)
+            .expireAfterAccess(60 * 2, TimeUnit.SECONDS)
             .build()
 
     /**
@@ -112,17 +114,69 @@ class WorkerCore {
      * post数据
      */
     fun <T : IDataEvent> sendData(data: T) {
-        cacheMapObserverByData.get(data::class) {
-            val listObserver = mutableListOf<KClass<*>>()
-            dataSyncFactories.forEach {
-                it.getSubscriberClazzByDataClazz(data::class)?.let {
-                    listObserver.addAll(it)
+        tryCatch {
+            val dataClazz = data::class
+            DataWatcher.logger.i("sendData start data:$data dataClazz:$dataClazz")
+            cacheMapObserverByData.get(dataClazz) {
+                DataWatcher.logger.i("sendData loader")
+                val listObserver = mutableListOf<KClass<*>>()
+                dataSyncFactories.forEach {
+                    it.getSubscriberClazzByDataClazz(dataClazz)?.let {
+                        listObserver.addAll(it)
+                    }
                 }
-            }
-            listObserver
-        }.let {
-            it.forEach {
+                val dataSyncSubscriberInfoList = mutableListOf<DataSyncSubscriberInfo<out IDataEvent>>()
+                listObserver.forEach { observerClazz ->
+                    dataSyncFactories.forEach {
+                        it.getSubInfoBySubscriberClazz(observerClazz)?.filter { it.dataClazz == dataClazz }?.let {
+                            dataSyncSubscriberInfoList.addAll(it)
+                        }
+                    }
+                }
+                dataSyncSubscriberInfoList
+            }.let {
+                DataWatcher.logger.i("sendData end dataClazz:$dataClazz data:$data dataSyncSubscriberInfoList:${it.map { it.toString() }} dataWatchingMap:${dataWatchingMap.size}")
+                it.forEach { dataSyncSubscriberInfo ->
+                    if (dataWatchingMap.containsKey(dataSyncSubscriberInfo.subscriberClazz)) {
+                        DataWatcher.logger.i("sendData subscriberClazz:${dataSyncSubscriberInfo.subscriberClazz} method:${dataSyncSubscriberInfo.methodName} dispatch:${dataSyncSubscriberInfo.dispatcher}")
+                        when (dataSyncSubscriberInfo.dispatcher) {
+                            Dispatcher.Origin -> { // 当前线程
+                                dataWatchingMap[dataSyncSubscriberInfo.subscriberClazz]?.watchers?.forEach {
+                                    val observer = it.objectWeak.get()
+                                    it.findDataDiffer(dataClazz)?.let {
+                                        if (!DataDifferUtil.checkData(it, data)) {
+                                            DataWatcher.logger.i("sendData method.invoke")
+                                            observer?.let {
+                                                val method = observer::class.java.getMethod(dataSyncSubscriberInfo.methodName, dataClazz.java)
+                                                method.invoke(it, data)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
 
+                            Dispatcher.Main -> { // 主线程
+                                if (Thread.currentThread() == Looper.getMainLooper().thread) { // 主线程直接运行
+                                } else {
+                                }
+                            }
+
+                            Dispatcher.MainPost -> {
+
+                            }
+
+                            Dispatcher.Async -> {
+
+                            }
+
+                            Dispatcher.AsyncOrder -> {
+
+                            }
+
+                            else -> {}
+                        }
+                    }
+                }
             }
         }
     }
