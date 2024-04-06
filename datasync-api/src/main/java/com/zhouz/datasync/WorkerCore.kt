@@ -1,5 +1,6 @@
 package com.zhouz.datasync
 
+import android.os.Handler
 import android.os.Looper
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
@@ -125,12 +126,14 @@ class WorkerCore {
                         listObserver.addAll(it)
                     }
                 }
-                val dataSyncSubscriberInfoList = mutableListOf<DataSyncSubscriberInfo<out IDataEvent>>()
+                val dataSyncSubscriberInfoList =
+                    mutableListOf<DataSyncSubscriberInfo<out IDataEvent>>()
                 listObserver.forEach { observerClazz ->
                     dataSyncFactories.forEach {
-                        it.getSubInfoBySubscriberClazz(observerClazz)?.filter { it.dataClazz == dataClazz }?.let {
-                            dataSyncSubscriberInfoList.addAll(it)
-                        }
+                        it.getSubInfoBySubscriberClazz(observerClazz)
+                            ?.filter { it.dataClazz == dataClazz }?.let {
+                                dataSyncSubscriberInfoList.addAll(it)
+                            }
                     }
                 }
                 dataSyncSubscriberInfoList
@@ -141,28 +144,25 @@ class WorkerCore {
                         DataWatcher.logger.i("sendData subscriberClazz:${dataSyncSubscriberInfo.subscriberClazz} method:${dataSyncSubscriberInfo.methodName} dispatch:${dataSyncSubscriberInfo.dispatcher}")
                         when (dataSyncSubscriberInfo.dispatcher) {
                             Dispatcher.Origin -> { // 当前线程
-                                dataWatchingMap[dataSyncSubscriberInfo.subscriberClazz]?.watchers?.forEach {
-                                    val observer = it.objectWeak.get()
-                                    it.findDataDiffer(dataClazz)?.let {
-                                        if (!DataDifferUtil.checkData(it, data)) {
-                                            DataWatcher.logger.i("sendData method.invoke")
-                                            observer?.let {
-                                                val method = observer::class.java.getMethod(dataSyncSubscriberInfo.methodName, dataClazz.java)
-                                                method.invoke(it, data)
-                                            }
-                                        }
-                                    }
-                                }
+                                invokeFunc(dataSyncSubscriberInfo, dataClazz, data)
                             }
 
                             Dispatcher.Main -> { // 主线程
                                 if (Thread.currentThread() == Looper.getMainLooper().thread) { // 主线程直接运行
+                                    invokeFunc(dataSyncSubscriberInfo, dataClazz, data)
                                 } else {
+                                    val handler = Handler(Looper.getMainLooper())
+                                    handler.post {
+                                        invokeFunc(dataSyncSubscriberInfo, dataClazz, data)
+                                    }
                                 }
                             }
 
                             Dispatcher.MainPost -> {
-
+                                val handler = Handler(Looper.getMainLooper())
+                                handler.post {
+                                    invokeFunc(dataSyncSubscriberInfo, dataClazz, data)
+                                }
                             }
 
                             Dispatcher.Async -> {
@@ -175,6 +175,28 @@ class WorkerCore {
 
                             else -> {}
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun <T : IDataEvent> invokeFunc(
+        dataSyncSubscriberInfo: DataSyncSubscriberInfo<out IDataEvent>,
+        dataClazz: KClass<out T>,
+        data: T
+    ) {
+        dataWatchingMap[dataSyncSubscriberInfo.subscriberClazz]?.watchers?.forEach {
+            val observer = it.objectWeak.get()
+            it.findDataDiffer(dataClazz)?.let {
+                if (!DataDifferUtil.checkData(it, data)) {
+                    DataWatcher.logger.i("sendData method.invoke")
+                    observer?.let {
+                        val method = observer::class.java.getMethod(
+                            dataSyncSubscriberInfo.methodName,
+                            dataClazz.java
+                        )
+                        method.invoke(it, data)
                     }
                 }
             }
