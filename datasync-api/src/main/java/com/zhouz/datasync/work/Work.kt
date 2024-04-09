@@ -9,6 +9,8 @@ package com.zhouz.datasync.work
 class Work {
 
 
+
+
     /**
      * 数据释放
      */

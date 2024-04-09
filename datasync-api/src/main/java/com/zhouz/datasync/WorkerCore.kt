@@ -4,10 +4,12 @@ import android.os.Handler
 import android.os.Looper
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
+import com.zhouz.datasync.work.Work
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.launch
 import java.lang.ref.ReferenceQueue
 import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
@@ -25,13 +27,24 @@ import kotlin.reflect.KClass
 class WorkerCore {
     private val threadName = "DataSyncThreadPool"
 
-    private val context =
+    private val context by lazy {
         Executors.newCachedThreadPool { r -> Thread(r, threadName) }.asCoroutineDispatcher()
+    }
 
-    internal val workerScope =
+    internal val workerScope by lazy {
         CoroutineScope(SupervisorJob() + context + CoroutineExceptionHandler { _, _ ->
 
         })
+    }
+
+
+    private val asyncWorker by lazy {
+        AsyncWorker()
+    }
+
+    private val asyncOrderWork by lazy {
+        AsyncOrderWorker()
+    }
 
     /**
      * 订阅查找类
@@ -166,7 +179,9 @@ class WorkerCore {
                             }
 
                             Dispatcher.Async -> {
-
+                                if (asyncWorker.emit(Work())) {
+                                    workerScope.launch { asyncWorker() }
+                                }
                             }
 
                             Dispatcher.AsyncOrder -> {

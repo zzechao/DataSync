@@ -1,4 +1,4 @@
-package com.zhouz.datasync.worker
+package com.zhouz.datasync
 
 
 /**
@@ -6,10 +6,7 @@ package com.zhouz.datasync.worker
  * @date: 2024/3/28 19:23
  * description：Dispatcher.BackgroundPost执行队列
  */
-class AsyncOrderWorker: Runnable {
-
-
-
-    override fun run() {
+class AsyncOrderWorker : suspend () -> Unit {
+    override suspend fun invoke() {
     }
 }

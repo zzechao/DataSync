@@ -15,6 +15,7 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        multiDexEnabled = true
     }
 
     buildTypes {
@@ -50,6 +51,7 @@ dependencies {
     implementation project(':libs:lib1')
     implementation project(':libs:lib2')
     kapt("com.github.silencedut.hub:hub-compiler:2.9.5")
+    implementation("androidx.multidex:multidex:2.0.1")
 }
 
 kapt {
