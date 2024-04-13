@@ -34,17 +34,17 @@ class DataController : SuperController() {
     }
 
 
-    @DataObserver(threadName = Dispatcher.Origin)
+    @DataObserver(threadName = Dispatcher.Async)
     override fun onData2Change(data: Data) {
-        Log.i("DataController", "onData2Change data:$data $this")
+        Log.i("DataController", "onData2Change data:$data $this ${Thread.currentThread().id}")
     }
 
-    @DataObserver(threadName = Dispatcher.Origin)
+    @DataObserver(threadName = Dispatcher.Async)
     fun onData2Change(data1: Data1) {
 
     }
 
-    @DataObserver(threadName = Dispatcher.Origin)
+    @DataObserver(threadName = Dispatcher.Async)
     fun onDataSameChange(data: com.test.datasync.data.Data) {
 
     }

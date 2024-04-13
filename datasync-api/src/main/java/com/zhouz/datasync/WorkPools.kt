@@ -1,4 +1,4 @@
-package com.zhouz.datasync.work
+package com.zhouz.datasync
 
 
 /**

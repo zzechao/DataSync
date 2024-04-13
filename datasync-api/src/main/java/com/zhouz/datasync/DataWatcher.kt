@@ -19,7 +19,7 @@ object DataWatcher {
 
     internal lateinit var application: Application
 
-    private val core by lazy {
+    internal val core by lazy {
         WorkerCore()
     }
 

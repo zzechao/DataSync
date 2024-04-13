@@ -4,7 +4,6 @@ import android.os.Handler
 import android.os.Looper
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
-import com.zhouz.datasync.work.Work
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -179,7 +178,11 @@ class WorkerCore {
                             }
 
                             Dispatcher.Async -> {
-                                if (asyncWorker.emit(Work())) {
+                                if (asyncWorker.emit(Work<IDataEvent>().apply {
+                                        this.dataSyncSubscriberInfo = dataSyncSubscriberInfo
+                                        this.data = data
+                                        this.dataClazz = dataClazz
+                                    })) {
                                     workerScope.launch { asyncWorker() }
                                 }
                             }
@@ -198,7 +201,7 @@ class WorkerCore {
 
     private fun <T : IDataEvent> invokeFunc(
         dataSyncSubscriberInfo: DataSyncSubscriberInfo<out IDataEvent>,
-        dataClazz: KClass<out T>,
+        dataClazz: KClass<out IDataEvent>,
         data: T
     ) {
         dataWatchingMap[dataSyncSubscriberInfo.subscriberClazz]?.watchers?.forEach {
