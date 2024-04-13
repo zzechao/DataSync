@@ -1,5 +1,7 @@
 package com.zhouz.datasync
 
+import kotlin.reflect.KClass
+
 
 /**
  * @author:zhouz
@@ -8,7 +10,11 @@ package com.zhouz.datasync
  */
 interface IPools<T> {
 
-    fun obtain(): T?
+    fun <D : IDataEvent> obtain(
+        dataSyncSubscriberInfo: DataSyncSubscriberInfo<out IDataEvent>,
+        dataClazz: KClass<out IDataEvent>,
+        data: D
+    ): T
 
     fun recycler(data: T)
 }

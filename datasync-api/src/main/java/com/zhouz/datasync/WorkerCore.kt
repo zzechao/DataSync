@@ -45,6 +45,10 @@ class WorkerCore {
         AsyncOrderWorker()
     }
 
+    private val workerPools by lazy {
+        WorkPools()
+    }
+
     /**
      * 订阅查找类
      */
@@ -178,11 +182,8 @@ class WorkerCore {
                             }
 
                             Dispatcher.Async -> {
-                                if (asyncWorker.emit(Work<IDataEvent>().apply {
-                                        this.dataSyncSubscriberInfo = dataSyncSubscriberInfo
-                                        this.data = data
-                                        this.dataClazz = dataClazz
-                                    })) {
+                                val worker = workerPools.obtain(dataSyncSubscriberInfo, dataClazz, data)
+                                if (asyncWorker.emit(worker)) {
                                     workerScope.launch { asyncWorker() }
                                 }
                             }
