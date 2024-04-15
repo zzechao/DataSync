@@ -17,9 +17,10 @@ class Work<T : IDataEvent> {
     /**
      * 数据释放
      */
-    fun release() {
+    fun release(): Work<out IDataEvent> {
         dataSyncSubscriberInfo = null
         dataClazz = null
         data = null
+        return this
     }
 }

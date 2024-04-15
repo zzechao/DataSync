@@ -189,7 +189,10 @@ class WorkerCore {
                             }
 
                             Dispatcher.AsyncOrder -> {
-
+                                val worker = workerPools.obtain(dataSyncSubscriberInfo, dataClazz, data)
+                                if (asyncOrderWork.emit(worker)) {
+                                    workerScope.launch { asyncOrderWork() }
+                                }
                             }
 
                             else -> {}
