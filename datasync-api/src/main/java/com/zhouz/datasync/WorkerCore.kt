@@ -31,8 +31,8 @@ class WorkerCore {
     }
 
     internal val workerScope by lazy {
-        CoroutineScope(SupervisorJob() + context + CoroutineExceptionHandler { _, _ ->
-
+        CoroutineScope(SupervisorJob() + context + CoroutineExceptionHandler { _, ex ->
+            DataWatcher.logger.e("CoroutineExceptionHandler", ex)
         })
     }
 
@@ -182,14 +182,16 @@ class WorkerCore {
                             }
 
                             Dispatcher.Async -> {
-                                val worker = workerPools.obtain(dataSyncSubscriberInfo, dataClazz, data)
+                                val worker =
+                                    workerPools.obtain(dataSyncSubscriberInfo, dataClazz, data)
                                 if (asyncWorker.emit(worker)) {
                                     workerScope.launch { asyncWorker() }
                                 }
                             }
 
                             Dispatcher.AsyncOrder -> {
-                                val worker = workerPools.obtain(dataSyncSubscriberInfo, dataClazz, data)
+                                val worker =
+                                    workerPools.obtain(dataSyncSubscriberInfo, dataClazz, data)
                                 if (asyncOrderWork.emit(worker)) {
                                     workerScope.launch { asyncOrderWork() }
                                 }

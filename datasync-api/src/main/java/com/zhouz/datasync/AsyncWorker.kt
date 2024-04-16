@@ -15,10 +15,10 @@ import kotlin.reflect.KClass
  */
 class AsyncWorker : suspend () -> Unit {
 
-    private val queue by lazy { PriorityQueue<Work<out IDataEvent>>() }
+    private val queue by lazy { PriorityQueue<Work>() }
     private var mCompletableDeferred: CompletableDeferred<Boolean>? = null
 
-    fun emit(work: Work<out IDataEvent>): Boolean {
+    fun emit(work: Work): Boolean {
         queue.offer(work)
         mCompletableDeferred?.takeIf {
             it.isActive
@@ -29,6 +29,7 @@ class AsyncWorker : suspend () -> Unit {
     }
 
     override suspend fun invoke() {
+        DataWatcher.logger.i("AsyncWorker invoke")
         coroutineScope {
             while (true) {
                 var worker = queue.poll()
@@ -68,7 +69,9 @@ class AsyncWorker : suspend () -> Unit {
         DataWatcher.core.dataWatchingMap[dataSyncSubscriberInfo.subscriberClazz]?.watchers?.forEach {
             val observer = it.objectWeak.get()
             it.findDataDiffer(dataClazz)?.let {
-                if (!DataDifferUtil.checkData(it, data)) {
+                if (!DataDifferUtil.checkData(it, data).apply {
+                    DataWatcher.logger.i("invokeFunc $this")
+                    }) {
                     DataWatcher.logger.i("sendData method.invoke")
                     observer?.let {
                         val method = observer::class.java.getMethod(

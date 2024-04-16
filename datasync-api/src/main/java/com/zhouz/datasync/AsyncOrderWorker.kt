@@ -11,9 +11,9 @@ import kotlin.reflect.KClass
  */
 class AsyncOrderWorker : suspend () -> Unit {
 
-    private val queue by lazy { PriorityQueue<Work<out IDataEvent>>() }
+    private val queue by lazy { PriorityQueue<Work>() }
 
-    fun emit(work: Work<out IDataEvent>): Boolean {
+    fun emit(work: Work): Boolean {
         queue.offer(work)
         return true
     }

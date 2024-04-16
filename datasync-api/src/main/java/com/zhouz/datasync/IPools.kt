@@ -8,13 +8,13 @@ import kotlin.reflect.KClass
  * @date: 2024/3/28 19:14
  * description：对象池接口
  */
-interface IPools<T> {
+interface IPools {
 
     fun <D : IDataEvent> obtain(
         dataSyncSubscriberInfo: DataSyncSubscriberInfo<out IDataEvent>,
         dataClazz: KClass<out IDataEvent>,
         data: D
-    ): T
+    ): Work
 
-    fun recycler(data: T)
+    fun recycler(data: Work)
 }
