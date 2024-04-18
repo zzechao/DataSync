@@ -10,6 +10,9 @@ import kotlin.reflect.KClass
  */
 class Work {
 
+    internal var workId: Int = 0
+
+
     var dataSyncSubscriberInfo: DataSyncSubscriberInfo<out IDataEvent>? = null
     var dataClazz: KClass<out IDataEvent>? = null
     var data: IDataEvent? = null
@@ -21,6 +24,11 @@ class Work {
         dataSyncSubscriberInfo = null
         dataClazz = null
         data = null
+        workId = 0
         return this
+    }
+
+    fun priority(): Int {
+        return 1
     }
 }

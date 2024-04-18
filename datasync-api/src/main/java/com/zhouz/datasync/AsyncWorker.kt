@@ -1,10 +1,13 @@
 package com.zhouz.datasync
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import java.util.PriorityQueue
+import java.util.concurrent.PriorityBlockingQueue
+import kotlin.math.abs
 import kotlin.reflect.KClass
 
 
@@ -15,24 +18,51 @@ import kotlin.reflect.KClass
  */
 class AsyncWorker : suspend () -> Unit {
 
-    private val queue by lazy { PriorityQueue<Work>() }
+    private val queue by lazy {
+        PriorityBlockingQueue<Work>(20, Comparator { work1, work2 ->
+            val diff = work1.priority() - work2.priority()
+            return@Comparator if (diff == 0) {
+                val diff2 = work1.workId - work2.workId
+                if (diff2 == 0) {
+                    0
+                } else {
+                    diff2 / abs(diff2)
+                }
+            } else {
+                diff / abs(diff)
+            }
+        })
+    }
     private var mCompletableDeferred: CompletableDeferred<Boolean>? = null
 
+    @Volatile
+    private var isRunning = false
+
+    @Synchronized
     fun emit(work: Work): Boolean {
+        DataWatcher.logger.i("AsyncWorker emit ${mCompletableDeferred == null} isRunning:$isRunning")
         queue.offer(work)
-        mCompletableDeferred?.takeIf {
-            it.isActive
-        }?.let {
-            it.complete(true)
-            return false
-        } ?: return true
+        if (!isRunning) {
+            isRunning = true
+            mCompletableDeferred?.takeIf {
+                it.isActive
+            }?.let {
+                it.complete(true)
+                return false
+            } ?: return true
+        }
+        return false
     }
 
     override suspend fun invoke() {
-        DataWatcher.logger.i("AsyncWorker invoke")
-        coroutineScope {
+        DataWatcher.logger.i("AsyncWorker invoke ${Thread.currentThread().name} $isRunning")
+        withContext(CoroutineExceptionHandler { _, ex ->
+            DataWatcher.logger.e("error", ex)
+            isRunning = false
+        }) {
             while (true) {
                 var worker = queue.poll()
+                DataWatcher.logger.i("AsyncWorker invoke 1 ${worker?.workId} ${Thread.currentThread().name}")
                 if (worker == null) {
                     val value = withTimeoutOrNull(2000L) {
                         if (mCompletableDeferred == null || mCompletableDeferred?.isActive != true) {
@@ -41,17 +71,22 @@ class AsyncWorker : suspend () -> Unit {
                         }
                         mCompletableDeferred?.await()
                     }
+                    DataWatcher.logger.i("AsyncWorker invoke 2 $value")
                     if (value == true) {
                         worker = queue.poll()
-                        worker?.let {
-                            invokeFunc(worker.dataSyncSubscriberInfo, worker.dataClazz, worker.data)
-                        } ?: return@coroutineScope
+                        DataWatcher.logger.i("AsyncWorker invoke await ${worker?.workId} ${Thread.currentThread().name}")
                     } else {
-                        return@coroutineScope
+                        return@withContext
                     }
                 }
+                DataWatcher.logger.i("AsyncWorker invoke 3 $worker")
+                worker?.let {
+                    invokeFunc(worker.dataSyncSubscriberInfo, worker.dataClazz, worker.data)
+                    DataWatcher.core.workerPools.recycler(it)
+                } ?: return@withContext
             }
         }
+        isRunning = false
     }
 
     private fun newWorkerCompletableDeferred(job: Job? = null): CompletableDeferred<Boolean> {
@@ -70,9 +105,9 @@ class AsyncWorker : suspend () -> Unit {
             val observer = it.objectWeak.get()
             it.findDataDiffer(dataClazz)?.let {
                 if (!DataDifferUtil.checkData(it, data).apply {
-                    DataWatcher.logger.i("invokeFunc $this")
+                        DataWatcher.logger.i("invokeFunc $this")
                     }) {
-                    DataWatcher.logger.i("sendData method.invoke")
+                    DataWatcher.logger.i("AsyncWorker invokeFunc method.invoke thread:${Thread.currentThread().name}")
                     observer?.let {
                         val method = observer::class.java.getMethod(
                             dataSyncSubscriberInfo.methodName,

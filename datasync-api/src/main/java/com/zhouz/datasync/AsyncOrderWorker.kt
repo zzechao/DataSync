@@ -1,6 +1,7 @@
 package com.zhouz.datasync
 
-import java.util.PriorityQueue
+import java.util.concurrent.PriorityBlockingQueue
+import kotlin.math.abs
 import kotlin.reflect.KClass
 
 
@@ -11,8 +12,23 @@ import kotlin.reflect.KClass
  */
 class AsyncOrderWorker : suspend () -> Unit {
 
-    private val queue by lazy { PriorityQueue<Work>() }
+    private val queue by lazy {
+        PriorityBlockingQueue<Work>(20, Comparator { work1, work2 ->
+            val diff = work1.priority() - work2.priority()
+            return@Comparator if (diff == 0) {
+                val diff2 = work1.workId - work2.workId
+                if (diff2 == 0) {
+                    0
+                } else {
+                    diff2 / abs(diff2)
+                }
+            } else {
+                diff / abs(diff)
+            }
+        })
+    }
 
+    @Synchronized
     fun emit(work: Work): Boolean {
         queue.offer(work)
         return true
@@ -20,8 +36,10 @@ class AsyncOrderWorker : suspend () -> Unit {
 
     override suspend fun invoke() {
         val worker = queue.poll()
+        DataWatcher.logger.i("AsyncOrderWorker invoke ${Thread.currentThread().name} workId:${worker?.workId}")
         worker?.let {
             invokeFunc(worker.dataSyncSubscriberInfo, worker.dataClazz, worker.data)
+            DataWatcher.core.workerPools.recycler(it)
         }
     }
 
@@ -30,6 +48,7 @@ class AsyncOrderWorker : suspend () -> Unit {
         dataClazz: KClass<out IDataEvent>?,
         data: T?
     ) {
+        DataWatcher.logger.i("AsyncOrderWorker invokeFunc start thread:${Thread.currentThread().name}")
         dataSyncSubscriberInfo ?: return
         dataClazz ?: return
         data ?: return
@@ -37,7 +56,7 @@ class AsyncOrderWorker : suspend () -> Unit {
             val observer = it.objectWeak.get()
             it.findDataDiffer(dataClazz)?.let {
                 if (!DataDifferUtil.checkData(it, data)) {
-                    DataWatcher.logger.i("sendData method.invoke")
+                    DataWatcher.logger.i("AsyncOrderWorker invokeFunc middle thread:${Thread.currentThread().name}")
                     observer?.let {
                         val method = observer::class.java.getMethod(
                             dataSyncSubscriberInfo.methodName,

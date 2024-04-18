@@ -11,7 +11,7 @@ import com.zhouz.datasync.Dispatcher
  */
 class BaseDataController2 {
     @DataObserver(
-        threadName = Dispatcher.AsyncOrder
+        threadName = Dispatcher.Main
     )
     fun onDataChange(data: BaseData2) {
     }

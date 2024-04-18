@@ -1,5 +1,6 @@
 package com.zhouz.datasync
 
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.reflect.KClass
 
 
@@ -15,26 +16,7 @@ class WorkPools : IPools {
     @Volatile
     private var mPoolSize = 50
 
-//    override fun <T : IDataEvent> obtain(
-//        dataSyncSubscriberInfo: DataSyncSubscriberInfo<out IDataEvent>,
-//        dataClazz: KClass<out IDataEvent>,
-//        data: IDataEvent
-//    ): Work<out IDataEvent> {
-//        return acquire<T>()?.apply {
-//            this.dataSyncSubscriberInfo = dataSyncSubscriberInfo
-//            this.data = data
-//            this.dataClazz = dataClazz
-//        } ?: Work<IDataEvent>().apply {
-//            this.dataSyncSubscriberInfo = dataSyncSubscriberInfo
-//            this.data = data
-//            this.dataClazz = dataClazz
-//        }
-//    }
-//
-//    override fun recycler(data: Work<out IDataEvent>) {
-//        release(data.release())
-//    }
-
+    private val workIdCalculate = AtomicInteger(0)
 
     private fun acquire(): Work? {
         return if (mPoolSize > 0) {
@@ -58,9 +40,9 @@ class WorkPools : IPools {
             }
 
             mPoolSize < mPools.size -> {
-                DataWatcher.logger.i("release mPoolSize:$mPoolSize")
                 mPools[mPoolSize] = instance
                 ++mPoolSize
+                DataWatcher.logger.i("release mPoolSize:$mPoolSize")
                 true
             }
 
@@ -85,18 +67,26 @@ class WorkPools : IPools {
         dataClazz: KClass<out IDataEvent>,
         data: D
     ): Work {
-        return acquire()?.apply {
-            this.dataSyncSubscriberInfo = dataSyncSubscriberInfo
-            this.data = data
-            this.dataClazz = dataClazz
-        } ?: Work().apply {
-            this.dataSyncSubscriberInfo = dataSyncSubscriberInfo
-            this.data = data
-            this.dataClazz = dataClazz
+        synchronized(this) {
+            return acquire()?.apply {
+                this.workId = workIdCalculate.getAndIncrement()
+                this.dataSyncSubscriberInfo = dataSyncSubscriberInfo
+                this.data = data
+                this.dataClazz = dataClazz
+            } ?: Work().apply {
+                this.workId = workIdCalculate.getAndIncrement()
+                this.dataSyncSubscriberInfo = dataSyncSubscriberInfo
+                this.data = data
+                this.dataClazz = dataClazz
+            }
         }
+
     }
 
+
     override fun recycler(data: Work) {
-        release(data.release())
+        synchronized(this) {
+            release(data.release())
+        }
     }
 }

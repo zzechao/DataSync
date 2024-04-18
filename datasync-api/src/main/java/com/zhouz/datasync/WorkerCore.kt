@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.reflect.KClass
 
 
@@ -26,13 +27,15 @@ import kotlin.reflect.KClass
 class WorkerCore {
     private val threadName = "DataSyncThreadPool"
 
+    private val mThreadId = AtomicInteger(0)
+
     private val context by lazy {
-        Executors.newCachedThreadPool { r -> Thread(r, threadName) }.asCoroutineDispatcher()
+        Executors.newCachedThreadPool { r -> Thread(r, "${threadName}_${mThreadId.getAndIncrement()}") }.asCoroutineDispatcher()
     }
 
     internal val workerScope by lazy {
         CoroutineScope(SupervisorJob() + context + CoroutineExceptionHandler { _, ex ->
-            DataWatcher.logger.e("CoroutineExceptionHandler", ex)
+            DataWatcher.logger.e("error", ex)
         })
     }
 
@@ -45,7 +48,7 @@ class WorkerCore {
         AsyncOrderWorker()
     }
 
-    private val workerPools by lazy {
+    internal val workerPools by lazy {
         WorkPools()
     }
 
@@ -131,7 +134,9 @@ class WorkerCore {
      * post数据
      */
     fun <T : IDataEvent> sendData(data: T) {
-        tryCatch {
+        tryCatch({
+            DataWatcher.logger.e("sendData error", it)
+        }) {
             val dataClazz = data::class
             DataWatcher.logger.i("sendData start data:$data dataClazz:$dataClazz")
             cacheMapObserverByData.get(dataClazz) {
@@ -185,7 +190,10 @@ class WorkerCore {
                                 val worker =
                                     workerPools.obtain(dataSyncSubscriberInfo, dataClazz, data)
                                 if (asyncWorker.emit(worker)) {
+                                    DataWatcher.logger.i("emit new async thread")
                                     workerScope.launch { asyncWorker() }
+                                } else {
+                                    DataWatcher.logger.i("emit same async thread")
                                 }
                             }
 

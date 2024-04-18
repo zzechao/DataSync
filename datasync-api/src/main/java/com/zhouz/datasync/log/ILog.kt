@@ -25,8 +25,5 @@ interface ILog {
 
     fun w(tag: String, message: String, vararg args: Any?) {}
 
-
-    fun e(tag: String, message: () -> Any?, error: Throwable? = null) {}
-
     fun e(tag: String, message: String, error: Throwable? = null, vararg args: Any?) {}
 }

@@ -1,10 +1,9 @@
 package com.zhouz.datasync
 
-import com.test.DataSyncIntercept
+import com.alibaba.fastjson2.JSON
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
-import javax.xml.datatype.DatatypeFactory
 
 
 /**
@@ -13,6 +12,9 @@ import javax.xml.datatype.DatatypeFactory
  */
 @RunWith(MockitoJUnitRunner::class)
 class TestZhouz {
+
+
+
     @Test
     fun testApi() {
 //        val context = mock(Context::class.java)
@@ -21,16 +23,16 @@ class TestZhouz {
 //        Mockito.`when`(context.applicationContext).thenReturn(applicationContext)
 //        CoreLog.init(context)
 //        main("zhouz")
-        //DataSyncIntercept().getSubInfoBySubscriberClazz(Any::class)
-    }
-
-
-    @DataObserver
-    fun onTestData(testData: TestData) {
+//        val format2 = "{\"value\":\"2\",\"data\"${format2}:}"
+//        val data = JSON.parseObject("{\"value\":\"1\",\"data\":$format2}", TestData::class.java)
+//        System.out.println(data)
     }
 }
 
 
-data class TestData(var value: Int = 1)
+data class TestData(
+    var value: Int = 1,
+    var data: TestData? = TestData()
+)
 
 
