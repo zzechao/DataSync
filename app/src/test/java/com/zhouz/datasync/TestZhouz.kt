@@ -1,6 +1,5 @@
 package com.zhouz.datasync
 
-import com.alibaba.fastjson2.JSON
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.junit.MockitoJUnitRunner
